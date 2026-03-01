@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '/utils/app_link_controller.dart' show ProcessLink;
 import '/services/music_service.dart';
+import '/ui/navigator.dart';
 
 class SearchScreenController extends GetxController with ProcessLink {
   final textInputController = TextEditingController();
@@ -18,6 +19,10 @@ class SearchScreenController extends GetxController with ProcessLink {
   // Speech to Text related
   final _speech = SpeechToText();
   final isListening = false.obs;
+  final showVoiceOverlay = false.obs;
+  final recognizedText = ''.obs;
+  // The last finalized result from speech recognition
+  String _lastRecognizedWords = '';
 
   // Desktop search bar related
   final focusNode = FocusNode();
@@ -98,29 +103,47 @@ class SearchScreenController extends GetxController with ProcessLink {
       }
     }
 
+    _lastRecognizedWords = '';
+    _isDone = false;
+    recognizedText.value = '';
+    textInputController.text = '';
+    suggestionList.clear();
+
+    // Dismiss keyboard before showing the voice overlay
+    FocusManager.instance.primaryFocus?.unfocus();
+
     final available = await _speech.initialize(
       onStatus: (status) {
         if (status == 'done' || status == 'notListening') {
-          isListening.value = false;
+          _onSpeechDone();
         }
       },
       onError: (errorNotification) {
-        debugPrint("Speech recognition error: \$errorNotification");
-        isListening.value = false;
+        debugPrint("Speech recognition error: $errorNotification");
+        _onSpeechDone();
       },
     );
 
     if (available) {
       isListening.value = true;
+      showVoiceOverlay.value = true;
       _speech.listen(
         onResult: (result) {
+          _lastRecognizedWords = result.recognizedWords;
+          recognizedText.value = result.recognizedWords;
           textInputController.text = result.recognizedWords;
           textInputController.selection =
               TextSelection.collapsed(offset: textInputController.text.length);
           onChanged(result.recognizedWords);
+
+          // Auto-stop: finalResult fires reliably on Android when pauseFor
+          // expires or the user stops talking — more reliable than onStatus.
+          if (result.finalResult) {
+            _onSpeechDone();
+          }
         },
         listenFor: const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 3),
+        pauseFor: const Duration(seconds: 2),
         partialResults: true,
         cancelOnError: true,
         listenMode: ListenMode.dictation,
@@ -130,7 +153,27 @@ class SearchScreenController extends GetxController with ProcessLink {
 
   void stopListening() async {
     await _speech.stop();
+    _onSpeechDone();
+  }
+
+  bool _isDone = false;
+
+  void _onSpeechDone() {
+    if (_isDone) return; // prevent double-fire from onStatus + finalResult
+    _isDone = true;
     isListening.value = false;
+    showVoiceOverlay.value = false;
+    if (_lastRecognizedWords.isNotEmpty) {
+      // Slight delay so overlay dismisses smoothly first
+      Future.delayed(const Duration(milliseconds: 150), () {
+        addToHistryQueryList(_lastRecognizedWords);
+        Get.toNamed(
+          ScreenNavigationSetup.searchResultScreen,
+          id: ScreenNavigationSetup.id,
+          arguments: _lastRecognizedWords,
+        );
+      });
+    }
   }
 
   @override
