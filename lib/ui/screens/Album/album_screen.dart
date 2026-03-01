@@ -190,7 +190,7 @@ class AlbumScreen extends StatelessWidget {
                                         children: [
                                           // Bookmark button
                                           Obx(() => IconButton(
-                                            tooltip: albumController
+                                              tooltip: albumController
                                                       .isAddedToLibrary.isFalse
                                                   ? "addToLibrary".tr
                                                   : "removeFromLibrary".tr,
@@ -227,7 +227,7 @@ class AlbumScreen extends StatelessWidget {
                                                   : Icons.bookmark_added))),
                                           // Play button
                                           IconButton(
-                                            tooltip: "play".tr,
+                                              tooltip: "play".tr,
                                               onPressed: () {
                                                 playerController
                                                     .playPlayListSong(
@@ -254,7 +254,7 @@ class AlbumScreen extends StatelessWidget {
                                               )),
                                           // Enqueue button
                                           IconButton(
-                                            tooltip: "enqueueAlbumSongs".tr,
+                                              tooltip: "enqueueAlbumSongs".tr,
                                               onPressed: () {
                                                 Get.find<PlayerController>()
                                                     .enqueueSongList(
@@ -363,7 +363,7 @@ class AlbumScreen extends StatelessWidget {
                                           //           Icons.cloud_sync)),
 
                                           IconButton(
-                                            tooltip: "shareAlbum".tr,
+                                              tooltip: "shareAlbum".tr,
                                               visualDensity:
                                                   const VisualDensity(
                                                       vertical: -3),
@@ -492,41 +492,44 @@ class AlbumScreen extends StatelessWidget {
       },
       child: Padding(
         padding: const EdgeInsets.only(left: 25.0, bottom: 10, right: 30),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Marquee(
-              delay: const Duration(milliseconds: 300),
-              duration: const Duration(seconds: 5),
-              id: title.hashCode.toString(),
-              child: Text(
-                title.length > 50 ? title.substring(0, 50) : title,
-                maxLines: 1,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge!
-                    .copyWith(fontSize: 30),
-              ),
-            ),
-            Text(
-              description ?? "",
-              maxLines: 1,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Marquee(
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Marquee(
                 delay: const Duration(milliseconds: 300),
                 duration: const Duration(seconds: 5),
-                id: artists.hashCode.toString(),
+                id: title.hashCode.toString(),
                 child: Text(
-                  artists,
+                  title.length > 50 ? title.substring(0, 50) : title,
                   maxLines: 1,
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge!
+                      .copyWith(fontSize: 30),
                 ),
               ),
-            ),
-          ],
+              Text(
+                description ?? "",
+                maxLines: 1,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Marquee(
+                  delay: const Duration(milliseconds: 300),
+                  duration: const Duration(seconds: 5),
+                  id: artists.hashCode.toString(),
+                  child: Text(
+                    artists,
+                    maxLines: 1,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

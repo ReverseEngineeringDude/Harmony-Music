@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_lyric/lyrics_reader.dart';
 import 'package:get/get.dart';
 
-import '../../widgets/loader.dart';
+import '../../widgets/shimmer_widgets/lyrics_shimmer.dart';
 import '../player_controller.dart';
 
 class LyricsWidget extends StatelessWidget {
@@ -15,7 +15,7 @@ class LyricsWidget extends StatelessWidget {
     return Obx(
       () => playerController.isLyricsLoading.isTrue
           ? const Center(
-              child: LoadingIndicator(),
+              child: LyricsShimmerWidget(),
             )
           : playerController.lyricsMode.toInt() == 1
               ? Center(
@@ -55,11 +55,11 @@ class LyricsWidget extends StatelessWidget {
                       child: Text(
                         "syncedLyricsNotAvailable".tr,
                         style: playerController.isDesktopLyricsDialogOpen
-                              ? Theme.of(context).textTheme.titleMedium!
-                              : Theme.of(context)
-                                  .textTheme
-                                  .titleMedium!
-                                  .copyWith(color: Colors.white),
+                            ? Theme.of(context).textTheme.titleMedium!
+                            : Theme.of(context)
+                                .textTheme
+                                .titleMedium!
+                                .copyWith(color: Colors.white),
                       ),
                     ),
                   ),

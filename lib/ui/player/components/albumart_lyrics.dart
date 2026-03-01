@@ -7,17 +7,61 @@ import '../../widgets/image_widget.dart';
 import '../../widgets/sleep_timer_bottom_sheet.dart';
 import '../../widgets/songinfo_bottom_sheet.dart';
 
-class AlbumArtNLyrics extends StatelessWidget {
+class AlbumArtNLyrics extends StatefulWidget {
   const AlbumArtNLyrics({super.key, required this.playerArtImageSize});
   final double playerArtImageSize;
 
   @override
+  State<AlbumArtNLyrics> createState() => _AlbumArtNLyricsState();
+}
+
+class _AlbumArtNLyricsState extends State<AlbumArtNLyrics>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _heartAnimationController;
+  late Animation<double> _heartScaleAnimation;
+  late Animation<double> _heartOpacityAnimation;
+  late Animation<double> _flightProgressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _heartAnimationController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1000));
+
+    _heartScaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.2), weight: 15),
+      TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 10),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 45),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.1), weight: 30),
+    ]).animate(CurvedAnimation(
+        parent: _heartAnimationController, curve: Curves.easeInOut));
+
+    _heartOpacityAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 10),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 60),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 30),
+    ]).animate(CurvedAnimation(
+        parent: _heartAnimationController, curve: Curves.easeInOut));
+
+    _flightProgressAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.0), weight: 70),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 30),
+    ]).animate(CurvedAnimation(
+        parent: _heartAnimationController, curve: Curves.easeIn));
+  }
+
+  @override
+  void dispose() {
+    _heartAnimationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final PlayerController playerController = Get.find<PlayerController>();
-    //final size = MediaQuery.of(context).size;
-    //double playerArtImageSize = size.width - ((size.height < 750) ? 90 : 60);
     return Obx(() => playerController.currentSong.value != null
         ? Stack(
+            alignment: Alignment.center,
             children: [
               GestureDetector(
                 onLongPress: () {
@@ -40,6 +84,14 @@ class AlbumArtNLyrics extends StatelessWidget {
                 onTap: () {
                   playerController.showLyrics();
                 },
+                onDoubleTap: () {
+                  if (playerController.showLyricsflag.isFalse) {
+                    if (playerController.isCurrentSongFav.isFalse) {
+                      playerController.toggleFavourite();
+                    }
+                    _heartAnimationController.forward(from: 0.0);
+                  }
+                },
                 onHorizontalDragEnd: (DragEndDetails details) {
                   if (playerController.showLyricsflag.isTrue) return;
                   if (details.primaryVelocity! < 0) {
@@ -48,10 +100,45 @@ class AlbumArtNLyrics extends StatelessWidget {
                     playerController.prev();
                   }
                 },
-                child: ImageWidget(
-                  size: playerArtImageSize,
-                  song: playerController.currentSong.value!,
-                  isPlayerArtImage: true,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    ImageWidget(
+                      size: widget.playerArtImageSize,
+                      song: playerController.currentSong.value!,
+                      isPlayerArtImage: true,
+                    ),
+
+                    // Animated Heart Overlay
+                    AnimatedBuilder(
+                      animation: _heartAnimationController,
+                      builder: (context, child) {
+                        final isLandscape = context.isLandscape;
+                        // Approximate distances to the real like button
+                        final dx = isLandscape
+                            ? widget.playerArtImageSize * 0.8
+                            : widget.playerArtImageSize * 0.45;
+                        final dy =
+                            isLandscape ? 0.0 : widget.playerArtImageSize * 0.6;
+
+                        return Transform.translate(
+                          offset: Offset(dx * _flightProgressAnimation.value,
+                              dy * _flightProgressAnimation.value),
+                          child: Opacity(
+                            opacity: _heartOpacityAnimation.value,
+                            child: Transform.scale(
+                              scale: _heartScaleAnimation.value,
+                              child: Icon(
+                                Icons.favorite,
+                                color: Colors.white,
+                                size: widget.playerArtImageSize * 0.4,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
               Obx(() => playerController.showLyricsflag.isTrue
@@ -60,8 +147,8 @@ class AlbumArtNLyrics extends StatelessWidget {
                         playerController.showLyrics();
                       },
                       child: Container(
-                        height: playerArtImageSize,
-                        width: playerArtImageSize,
+                        height: widget.playerArtImageSize,
+                        width: widget.playerArtImageSize,
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.8),
                           borderRadius: BorderRadius.circular(5),
@@ -71,7 +158,7 @@ class AlbumArtNLyrics extends StatelessWidget {
                             LyricsWidget(
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 0,
-                                    vertical: playerArtImageSize / 3.5)),
+                                    vertical: widget.playerArtImageSize / 3.5)),
                             IgnorePointer(
                               child: Container(
                                 decoration: BoxDecoration(
@@ -102,8 +189,8 @@ class AlbumArtNLyrics extends StatelessWidget {
                   : const SizedBox.shrink()),
               if (playerController.isSleepTimerActive.isTrue)
                 SizedBox(
-                  width: playerArtImageSize,
-                  height: playerArtImageSize,
+                  width: widget.playerArtImageSize,
+                  height: widget.playerArtImageSize,
                   //color: Colors.green,
                   child: Align(
                     alignment: Alignment.bottomRight,
