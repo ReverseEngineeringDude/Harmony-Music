@@ -87,11 +87,35 @@ class SearchScreen extends StatelessWidget {
                           contentPadding: const EdgeInsets.only(left: 5),
                           focusColor: Colors.white,
                           hintText: "searchDes".tr,
-                          suffix: IconButton(
-                            onPressed: searchScreenController.reset,
-                            icon: const Icon(Icons.close),
-                            splashRadius: 16,
-                            iconSize: 19,
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Obx(() => IconButton(
+                                    onPressed: () {
+                                      if (searchScreenController
+                                          .isListening.value) {
+                                        searchScreenController.stopListening();
+                                      } else {
+                                        searchScreenController.startListening();
+                                      }
+                                    },
+                                    icon: Icon(
+                                      Icons.mic,
+                                      color: searchScreenController
+                                              .isListening.value
+                                          ? Colors.red
+                                          : Theme.of(context).iconTheme.color,
+                                    ),
+                                    splashRadius: 16,
+                                    iconSize: 19,
+                                  )),
+                              IconButton(
+                                onPressed: searchScreenController.reset,
+                                icon: const Icon(Icons.close),
+                                splashRadius: 16,
+                                iconSize: 19,
+                              ),
+                            ],
                           )),
                     ),
                     Expanded(

@@ -59,7 +59,7 @@ dependencies:
   palette_generator: ^0.3.3+4
   path: ^1.8.3
   path_provider: ^2.1.1
-  permission_handler: ^11.0.1
+  permission_handler: ^12.0.1
   share_plus: ^10.1.4
   package_info_plus: ^8.0.0
   wakelock_plus: ^1.3.3
@@ -84,6 +84,7 @@ dependencies:
     git:
       url: https://github.com/anandnet/youtube_explode_dart.git
       ref: 1d9ec9baa806705b1d859260eeb389ec28c6b024
+  speech_to_text: ^7.3.0
 dev_dependencies:
 
   # The "flutter_lints" package below contains a set of recommended lints to

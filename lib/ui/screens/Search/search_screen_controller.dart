@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '/utils/app_link_controller.dart' show ProcessLink;
 import '/services/music_service.dart';
@@ -13,6 +15,10 @@ class SearchScreenController extends GetxController with ProcessLink {
   late Box<dynamic> queryBox;
   final urlPasted = false.obs;
 
+  // Speech to Text related
+  final _speech = SpeechToText();
+  final isListening = false.obs;
+
   // Desktop search bar related
   final focusNode = FocusNode();
   final isSearchBarInFocus = false.obs;
@@ -24,18 +30,24 @@ class SearchScreenController extends GetxController with ProcessLink {
   }
 
   _init() async {
-    if(GetPlatform.isDesktop){
-      focusNode.addListener((){
+    if (GetPlatform.isDesktop) {
+      focusNode.addListener(() {
         isSearchBarInFocus.value = focusNode.hasFocus;
       });
     }
     queryBox = await Hive.openBox("searchQuery");
     historyQuerylist.value = queryBox.values.toList().reversed.toList();
+
+    try {
+      await _speech.initialize();
+    } catch (e) {
+      debugPrint("Speech initialization failed: $e");
+    }
   }
 
   Future<void> onChanged(String text) async {
-    if(text.contains("https://")){
-      urlPasted.value = true; 
+    if (text.contains("https://")) {
+      urlPasted.value = true;
       return;
     }
     urlPasted.value = false;
@@ -74,6 +86,51 @@ class SearchScreenController extends GetxController with ProcessLink {
     final index = queryBox.values.toList().indexOf(txt);
     await queryBox.deleteAt(index);
     historyQuerylist.remove(txt);
+  }
+
+  void startListening() async {
+    if (GetPlatform.isDesktop) return;
+
+    if (!await Permission.microphone.isGranted) {
+      final status = await Permission.microphone.request();
+      if (status != PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    final available = await _speech.initialize(
+      onStatus: (status) {
+        if (status == 'done' || status == 'notListening') {
+          isListening.value = false;
+        }
+      },
+      onError: (errorNotification) {
+        debugPrint("Speech recognition error: \$errorNotification");
+        isListening.value = false;
+      },
+    );
+
+    if (available) {
+      isListening.value = true;
+      _speech.listen(
+        onResult: (result) {
+          textInputController.text = result.recognizedWords;
+          textInputController.selection =
+              TextSelection.collapsed(offset: textInputController.text.length);
+          onChanged(result.recognizedWords);
+        },
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 3),
+        partialResults: true,
+        cancelOnError: true,
+        listenMode: ListenMode.dictation,
+      );
+    }
+  }
+
+  void stopListening() async {
+    await _speech.stop();
+    isListening.value = false;
   }
 
   @override
