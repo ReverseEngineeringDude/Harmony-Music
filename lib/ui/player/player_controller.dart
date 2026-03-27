@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter_lyric/lyric_ui/ui_netease.dart';
+import 'package:flutter_lyric/lyric_ui/lyric_ui.dart';
 import 'package:hive/hive.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +20,8 @@ import '../screens/Home/home_screen_controller.dart';
 import '../widgets/sliding_up_panel.dart';
 import '/models/durationstate.dart';
 import '/services/music_service.dart';
+import '/ui/navigator.dart';
+import 'components/harmony_lyric_ui.dart';
 
 class PlayerController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -66,8 +68,9 @@ class PlayerController extends GetxController
   bool isDesktopLyricsDialogOpen = false;
   // 0 for play, 1 for pause, 2 for blank
   final gesturePlayerVisibleState = 2.obs;
-  final lyricUi =
-      UINetease(highlight: true, defaultSize: 20, defaultExtSize: 12);
+
+  /// Returns a lyric UI configured for premium highlighting.
+  LyricUI get lyricUi => HarmonyLyricUI();
   RxMap<String, dynamic> lyrics =
       <String, dynamic>{"synced": "", "plainLyrics": ""}.obs;
   ScrollController scrollController = ScrollController();
@@ -663,6 +666,64 @@ class PlayerController extends GetxController
   Future<void> _checkFav() async {
     isCurrentSongFav.value =
         (await Hive.openBox("LIBFAV")).containsKey(currentSong.value!.id);
+  }
+
+  void onArtistNameClicked(BuildContext context) {
+    if (currentSong.value == null) return;
+    final artists = currentSong.value!.extras?['artists'] as List?;
+    if (artists == null || artists.isEmpty) return;
+
+    // Filter only artists that have a valid browseId
+    final validArtists =
+        artists.where((a) => a['id'] != null && a['id'].toString().isNotEmpty).toList();
+    if (validArtists.isEmpty) return;
+
+    void navigateToArtist(String artistId) {
+      playerPanelController.close();
+      Get.toNamed(
+        '/artistScreen',
+        id: ScreenNavigationSetup.id,
+        preventDuplicates: true,
+        arguments: [true, artistId],
+      );
+    }
+
+    if (validArtists.length == 1) {
+      navigateToArtist(validArtists[0]['id'].toString());
+    } else {
+      // Multiple artists — show a picker
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Theme.of(context).cardColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (_) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  "Select Artist",
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              const Divider(height: 1),
+              ...validArtists.map((a) => ListTile(
+                    leading: const Icon(Icons.person_outline),
+                    title: Text(a['name']?.toString() ?? ''),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      navigateToArtist(a['id'].toString());
+                    },
+                  )),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> toggleFavourite() async {

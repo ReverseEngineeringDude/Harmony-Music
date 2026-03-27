@@ -125,26 +125,41 @@ class GesturePlayer extends StatelessWidget {
                                     height: 7,
                                   ),
                                   GetX<PlayerController>(builder: (controller) {
-                                    return Marquee(
-                                      delay: const Duration(milliseconds: 300),
-                                      duration: const Duration(seconds: 10),
-                                      id: "${playerController.currentSong.value}_subtitle",
-                                      child: Text(
-                                        playerController.currentSong.value !=
-                                                null
-                                            ? controller
-                                                .currentSong.value!.artist!
-                                            : "NA",
-                                        textAlign: TextAlign.start,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleSmall!
-                                            .copyWith(
-                                                color: Theme.of(context)
-                                                    .primaryColor
-                                                    .complementaryColor,
-                                                fontWeight: FontWeight.normal),
+                                    return GestureDetector(
+                                      onTap: () => playerController
+                                          .onArtistNameClicked(context),
+                                      child: Marquee(
+                                        delay:
+                                            const Duration(milliseconds: 300),
+                                        duration:
+                                            const Duration(seconds: 10),
+                                        id: "${playerController.currentSong.value}_subtitle",
+                                        child: Text(
+                                          playerController.currentSong.value !=
+                                                  null
+                                              ? controller
+                                                  .currentSong.value!.artist!
+                                              : "NA",
+                                          textAlign: TextAlign.start,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall!
+                                              .copyWith(
+                                                  color: Theme.of(context)
+                                                      .primaryColor
+                                                      .complementaryColor,
+                                                  fontWeight:
+                                                      FontWeight.normal,
+                                                  decoration:
+                                                      TextDecoration.underline,
+                                                  decorationColor:
+                                                      Theme.of(context)
+                                                          .primaryColor
+                                                          .complementaryColor
+                                                          .withValues(
+                                                              alpha: 0.5)),
+                                        ),
                                       ),
                                     );
                                   }),
