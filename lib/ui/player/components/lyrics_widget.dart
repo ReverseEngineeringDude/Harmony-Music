@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../widgets/shimmer_widgets/lyrics_shimmer.dart';
 import '../player_controller.dart';
+import 'smooth_lyrics_reader.dart';
 
 class LyricsWidget extends StatelessWidget {
   final EdgeInsetsGeometry padding;
@@ -42,7 +43,7 @@ class LyricsWidget extends StatelessWidget {
                   ),
                 )
               : IgnorePointer(
-                  child: LyricsReader(
+                  child: SmoothLyricsReader(
                     padding: const EdgeInsets.only(left: 5, right: 5),
                     lyricUi: playerController.lyricUi,
                     position: playerController
