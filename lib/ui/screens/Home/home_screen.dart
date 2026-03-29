@@ -16,6 +16,7 @@ import '../../widgets/content_list_widget.dart';
 import '../../widgets/quickpickswidget.dart';
 import '../../widgets/shimmer_widgets/home_shimmer.dart';
 import 'home_screen_controller.dart';
+import 'for_you_widget.dart';
 import '../Settings/settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -131,73 +132,21 @@ class Body extends StatelessWidget {
                 // for Desktop search bar
                 if (GetPlatform.isDesktop) {
                   final sscontroller = Get.find<SearchScreenController>();
-                  if (sscontroller.focusNode.hasFocus) {
+                   if (sscontroller.focusNode.hasFocus) {
                     sscontroller.focusNode.unfocus();
                   }
                 }
               },
               child: Obx(
                 () => homeScreenController.networkError.isTrue
-                    ? SizedBox(
-                        height: MediaQuery.of(context).size.height - 180,
-                        child: Column(
-                          children: [
-                            Align(
-                              alignment: Alignment.topLeft,
-                              child: Text(
-                                "home".tr,
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                            ),
-                            Expanded(
-                              child: Center(
-                                child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        "networkError1".tr,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium,
-                                      ),
-                                      const SizedBox(
-                                        height: 10,
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 15, vertical: 10),
-                                        decoration: BoxDecoration(
-                                            color: Theme.of(context)
-                                                .textTheme
-                                                .titleLarge!
-                                                .color,
-                                            borderRadius:
-                                                BorderRadius.circular(10)),
-                                        child: InkWell(
-                                          onTap: () {
-                                            homeScreenController
-                                                .loadContentFromNetwork();
-                                          },
-                                          child: Text(
-                                            "retry".tr,
-                                            style: TextStyle(
-                                                color: Theme.of(context)
-                                                    .canvasColor),
-                                          ),
-                                        ),
-                                      ),
-                                    ]),
-                              ),
-                            )
-                          ],
-                        ),
-                      )
+                    ? _OfflineScreen(homeScreenController: homeScreenController)
                     : Obx(() {
                         // dispose all detachached scroll controllers
                         homeScreenController.disposeDetachedScrollControllers();
                         final items = homeScreenController
                                 .isContentFetched.value
                             ? [
+                                const ForYouWidget(),
                                 Obx(() {
                                   final scrollController = ScrollController();
                                   homeScreenController.contentScrollControllers
@@ -275,5 +224,133 @@ class Body extends StatelessWidget {
         })
         .whereType<Widget>()
         .toList();
+  }
+}
+
+/// Shown on the home tab when there is no internet connection.
+///
+/// Offers two actions:
+///   1. Browse Downloads — navigates to the Library (Songs) tab
+///   2. Retry — re-attempts the home content network load
+class _OfflineScreen extends StatelessWidget {
+  const _OfflineScreen({required this.homeScreenController});
+  final HomeScreenController homeScreenController;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return SizedBox(
+      height: MediaQuery.of(context).size.height - 180,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("home".tr, style: textTheme.titleLarge),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── Icon ───────────────────────────────────────────────
+                  Icon(
+                    Icons.wifi_off_rounded,
+                    size: 64,
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "You're offline",
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "No internet connection. Listen to your downloads instead.",
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.55),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // ── Downloads card ─────────────────────────────────────
+                  GestureDetector(
+                    onTap: () {
+                      // Navigate to Library / Songs tab (index 1)
+                      homeScreenController.onSideBarTabSelected(1);
+                      homeScreenController.onBottonBarTabSelected(1);
+                    },
+                    child: Container(
+                      width: 260,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 18),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.primary.withValues(alpha: 0.25),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundColor: colorScheme.primary,
+                            child: Icon(Icons.download_done_rounded,
+                                color: colorScheme.onPrimary),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Browse Downloads",
+                                  style: textTheme.titleSmall?.copyWith(
+                                    color: colorScheme.onPrimaryContainer,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "Play your offline songs",
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onPrimaryContainer
+                                        .withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios_rounded,
+                              size: 16,
+                              color: colorScheme.onPrimaryContainer
+                                  .withValues(alpha: 0.6)),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ── Retry button ───────────────────────────────────────
+                  TextButton.icon(
+                    onPressed: homeScreenController.loadContentFromNetwork,
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    label: Text("retry".tr),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

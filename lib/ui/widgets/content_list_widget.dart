@@ -29,12 +29,14 @@ class ContentListWidget extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  !isHomeContent && content.title.length > 12
-                      ? "${content.title.substring(0, 12)}..."
-                      : content.title,
-                  //maxLines: 2,
-                  style: Theme.of(context).textTheme.titleLarge,
+                Flexible(
+                  child: Text(
+                    !isHomeContent && content.title.length > 12
+                        ? "${content.title.substring(0, 12)}..."
+                        : content.title,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
                 !isHomeContent
                     ? TextButton(

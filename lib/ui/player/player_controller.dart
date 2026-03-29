@@ -22,6 +22,7 @@ import '/models/durationstate.dart';
 import '/services/music_service.dart';
 import '/ui/navigator.dart';
 import 'components/harmony_lyric_ui.dart';
+import '../screens/Home/recommendation_controller.dart';
 
 class PlayerController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -251,6 +252,9 @@ class PlayerController extends GetxController
   }
 
   void _listenForChangesInDuration() {
+    MediaItem? _prevSong;
+    DateTime? _prevSongStartTime;
+
     _audioHandler.mediaItem.listen((mediaItem) async {
       final oldState = progressBarStatus.value;
       progressBarStatus.update((val) {
@@ -260,6 +264,28 @@ class PlayerController extends GetxController
       });
       if (mediaItem != null) {
         printINFO(mediaItem.title);
+
+        // ── Recommendation: skip detection ──────────────────────────────
+        // If a previous song was playing and it changed before finishing,
+        // that counts as a skip (the service will check the listen ratio).
+        final recCon = _tryGetRecommendationController();
+        if (_prevSong != null &&
+            _prevSong!.id != mediaItem.id &&
+            _prevSongStartTime != null) {
+          final prevDurSecs = _prevSong!.duration?.inSeconds ?? 0;
+          final listenedSecs =
+              DateTime.now().difference(_prevSongStartTime!).inSeconds;
+          // Only fire skip if the song wasn't near its end (last 15 s)
+          if (prevDurSecs > 0 && listenedSecs < prevDurSecs - 15) {
+            recCon?.onSongSkipped(_prevSong!);
+          }
+        }
+        _prevSong = mediaItem;
+        _prevSongStartTime = DateTime.now();
+        // ── Recommendation: play event ──────────────────────────────────
+        recCon?.onSongStarted(mediaItem);
+        // ───────────────────────────────────────────────────────────────
+
         _newSongFlag = true;
         isCurrentSongBuffered.value = false;
         currentSong.value = mediaItem;
@@ -744,11 +770,25 @@ class PlayerController extends GetxController
       // ignore: empty_catches
     } catch (e) {}
     isCurrentSongFav.value = !isCurrentSongFav.value;
+    // ── Recommendation: like event ────────────────────────────────────────
+    _tryGetRecommendationController()
+        ?.onLikeToggled(currMediaItem.id, isLiked: isCurrentSongFav.value);
+    // ─────────────────────────────────────────────────────────────────────
     if (Get.find<SettingsScreenController>()
             .autoDownloadFavoriteSongEnabled
             .isTrue &&
         isCurrentSongFav.isTrue) {
       Get.find<Downloader>().download(currMediaItem);
+    }
+  }
+
+  /// Returns the [RecommendationController] if it has been registered,
+  /// or null (used to avoid hard dependency on load order).
+  RecommendationController? _tryGetRecommendationController() {
+    try {
+      return Get.find<RecommendationController>();
+    } catch (_) {
+      return null;
     }
   }
 

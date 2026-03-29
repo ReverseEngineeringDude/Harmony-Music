@@ -455,8 +455,6 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
         currentIndex = songIndex;
         final isNewUrlReq = extras['newUrl'] ?? false;
         final currentSong = queue.value[currentIndex];
-        final futureStreamInfo =
-            checkNGetUrl(currentSong.id, generateNewUrl: isNewUrlReq);
         final bool restoreSession = extras['restoreSession'] ?? false;
         isSongLoading = true;
         playbackState.add(playbackState.value
@@ -466,7 +464,28 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
         }
 
         mediaItem.add(currentSong);
-        final streamInfo = await futureStreamInfo;
+
+        // Fetch stream URL — catch network/socket failures and surface a
+        // user-friendly offline message rather than crashing.
+        HMStreamingData streamInfo;
+        try {
+          streamInfo = await checkNGetUrl(currentSong.id, generateNewUrl: isNewUrlReq);
+        } on Exception catch (e) {
+          isSongLoading = false;
+          final msg = e.toString();
+          final isOffline = msg.contains('Failed host lookup') ||
+              msg.contains('SocketException') ||
+              msg.contains('NetworkError') ||
+              msg.contains('Connection refused');
+          Get.find<PlayerController>().notifyPlayError(
+              isOffline ? "You're offline. Check your connection." : msg);
+          playbackState.add(playbackState.value.copyWith(
+              processingState: AudioProcessingState.error,
+              errorCode: isOffline ? 503 : 500,
+              errorMessage: isOffline ? "No network" : msg));
+          return;
+        }
+
         if (songIndex != currentIndex) {
           return;
         } else if (!streamInfo.playable) {
