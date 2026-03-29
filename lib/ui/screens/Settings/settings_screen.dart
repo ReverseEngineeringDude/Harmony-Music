@@ -355,7 +355,43 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (GetPlatform.isAndroid)
+                  ListTile(
+                    contentPadding: const EdgeInsets.only(left: 5, right: 10),
+                    title: Text("ultraHighQualityStreaming".tr),
+                    subtitle: Text("ultraHighQualityStreamingDes".tr,
+                        style: Theme.of(context).textTheme.bodyMedium),
+                    trailing: Obx(
+                      () => CustSwitch(
+                          value: settingsController.ultraHighQualityEnabled.value,
+                          onChanged: (val) {
+                            if (val) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text("ultraHighQualityStreamingWarning".tr),
+                                  content: Text("ultraHighQualityStreamingWarningDes".tr),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text("cancel".tr),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        settingsController.toggleUltraHighQuality(true);
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text("confirm".tr),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            } else {
+                              settingsController.toggleUltraHighQuality(false);
+                            }
+                          }),
+                    ),
+                  ),
+                    if (GetPlatform.isAndroid)
                     ListTile(
                         contentPadding:
                             const EdgeInsets.only(left: 5, right: 10),

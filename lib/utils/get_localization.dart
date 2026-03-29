@@ -1763,6 +1763,11 @@ Map<String, Map<String, String>> get keys => {
     "keepScreenOnWhilePlaying": "Bildschirm während der Wiedergabe eingeschaltet lassen",
     "keepScreenOnWhilePlayingDes": "Wenn aktiviert, bleibt der Bildschirm des Geräts beim Musikhören eingeschaltet"
 },"en" : {
+    "ultraHighQualityStreaming": "Ultra High Quality Audio (Streaming Only)",
+    "ultraHighQualityStreamingDes": "Stream highest possible quality (Lossless if available)",
+    "ultraHighQualityStreamingWarning": "High Data Usage Warning",
+    "ultraHighQualityStreamingWarningDes": "This will use significantly more data and may affect performance on slow networks. Do you want to enable it?",
+    "confirm": "Confirm",
     "home": "Home",
     "songs": "Songs",
     "playlists": "Playlists",

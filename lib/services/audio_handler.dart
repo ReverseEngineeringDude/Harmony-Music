@@ -18,6 +18,7 @@ import '/models/album.dart';
 import '../models/playlist.dart';
 import '/services/equalizer.dart';
 import '/services/stream_service.dart';
+import '/services/streaming_quality_service.dart';
 import '/models/hm_streaming_data.dart';
 import '/ui/player/player_controller.dart';
 import '../ui/screens/Home/home_screen_controller.dart';
@@ -820,7 +821,8 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
           playable: true,
           statusMSG: "OK",
           lowQualityAudio: cacheAudioPlaceholder,
-          highQualityAudio: cacheAudioPlaceholder);
+          highQualityAudio: cacheAudioPlaceholder,
+          ultraHighQualityAudio: cacheAudioPlaceholder);
     } else if (!offlineReplacementUrl && songDownloadsBox.containsKey(songId)) {
       final song = songDownloadsBox.get(songId);
       final streamInfoJson = song["streamInfo"];
@@ -843,7 +845,8 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
           playable: true,
           statusMSG: "OK",
           highQualityAudio: audio,
-          lowQualityAudio: audio);
+          lowQualityAudio: audio,
+          ultraHighQualityAudio: audio);
 
       if (path.contains(
           "${Get.find<SettingsScreenController>().supportDirPath}/Music")) {
@@ -859,7 +862,6 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
     } else {
       //check if song stream url is cached and allocate url accordingly
       final songsUrlCacheBox = Hive.box("SongsUrlCache");
-      final qualityIndex = Hive.box('AppPrefs').get('streamingQuality') ?? 1;
       HMStreamingData? streamInfo;
       if (songsUrlCacheBox.containsKey(songId) && !generateNewUrl) {
         final streamInfoJson = songsUrlCacheBox.get(songId);
@@ -878,7 +880,7 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
         if (streamInfo.playable) songsUrlCacheBox.put(songId, streamInfoJson);
       }
 
-      streamInfo.setQualityIndex(qualityIndex as int);
+      Get.find<StreamingQualityService>().applyQualitySelection(streamInfo);
       return streamInfo;
     }
   }

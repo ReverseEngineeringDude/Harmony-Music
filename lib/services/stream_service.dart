@@ -79,12 +79,18 @@ class StreamProvider {
       audioFormats?.lastWhere((item) => item.itag == 249 || item.itag == 139,
           orElse: () => audioFormats!.first);
 
+  Audio? get highestBitrateAudio {
+    if (audioFormats == null || audioFormats!.isEmpty) return null;
+    return audioFormats!.reduce((a, b) => a.bitrate > b.bitrate ? a : b);
+  }
+
   Map<String, dynamic> get hmStreamingData {
     return {
       "playable": playable,
       "statusMSG": statusMSG,
       "lowQualityAudio": lowQualityAudio?.toJson(),
-      "highQualityAudio": highestQualityAudio?.toJson()
+      "highQualityAudio": highestQualityAudio?.toJson(),
+      "ultraHighQualityAudio": highestBitrateAudio?.toJson()
     };
   }
 }

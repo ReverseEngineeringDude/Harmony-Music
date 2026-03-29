@@ -16,6 +16,7 @@ import 'nav_parser.dart';
 enum AudioQuality {
   Low,
   High,
+  Ultra,
 }
 
 class MusicServices extends getx.GetxService {

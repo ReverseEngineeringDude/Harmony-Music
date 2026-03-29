@@ -23,6 +23,7 @@ import 'utils/system_tray.dart';
 import 'utils/update_check_flag_file.dart';
 import 'models/song_stats.g.dart';
 import 'ui/screens/Home/recommendation_controller.dart';
+import 'services/streaming_quality_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -96,6 +97,7 @@ Future<void> startApplicationServices() async {
   Get.lazyPut(() => SettingsScreenController(), fenix: true);
   Get.lazyPut(() => Downloader(), fenix: true);
   Get.lazyPut(() => RecommendationController(), fenix: true);
+  Get.lazyPut(() => StreamingQualityService(), fenix: true);
   if (GetPlatform.isDesktop) {
     Get.lazyPut(() => SearchScreenController(), fenix: true);
     Get.put(DesktopSystemTray());

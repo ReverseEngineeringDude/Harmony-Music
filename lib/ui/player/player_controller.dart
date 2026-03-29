@@ -782,7 +782,12 @@ class PlayerController extends GetxController
     }
   }
 
-  /// Returns the [RecommendationController] if it has been registered,
+  // ── Let Me Sing ──────────────────────────────────────────────────────────
+
+  /// Toggles vocal removal for the current song.
+  ///
+  /// First call: processes audio with FFmpeg (shows spinner).
+
   /// or null (used to avoid hard dependency on load order).
   RecommendationController? _tryGetRecommendationController() {
     try {

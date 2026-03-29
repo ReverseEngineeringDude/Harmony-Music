@@ -47,6 +47,7 @@ class SettingsScreenController extends GetxController {
   final keepScreenAwake = false.obs;
   final restorePlaybackSession = false.obs;
   final cacheHomeScreenData = true.obs;
+  final ultraHighQualityEnabled = false.obs;
   final currentVersion = "V1.12.2";
 
   @override
@@ -129,6 +130,7 @@ class SettingsScreenController extends GetxController {
     }
     autoDownloadFavoriteSongEnabled.value =
         setBox.get("autoDownloadFavoriteSongEnabled") ?? false;
+    ultraHighQualityEnabled.value = setBox.get("ultraHighQualityEnabled") ?? false;
   }
 
   void setAppLanguage(String? val) {
@@ -179,6 +181,11 @@ class SettingsScreenController extends GetxController {
   void toggleSlidableAction(bool val) {
     setBox.put("slidableActionEnabled", val);
     slidableActionEnabled.value = val;
+  }
+
+  void toggleUltraHighQuality(bool val) {
+    setBox.put("ultraHighQualityEnabled", val);
+    ultraHighQualityEnabled.value = val;
   }
 
   void changeDownloadingFormat(String? val) {
