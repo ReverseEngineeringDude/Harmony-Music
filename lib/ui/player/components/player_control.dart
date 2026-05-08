@@ -58,17 +58,23 @@ class PlayerControlWidget extends StatelessWidget {
                         const SizedBox(
                           height: 5,
                         ),
-                        Marquee(
-                          delay: const Duration(milliseconds: 300),
-                          duration: const Duration(seconds: 10),
-                          id: "${playerController.currentSong.value}_subtitle",
-                          child: Text(
-                            playerController.currentSong.value != null
-                                ? playerController.currentSong.value!.artist!
-                                : "NA",
-                            textAlign: TextAlign.start,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelSmall,
+                        GestureDetector(
+                          onTap: () => playerController.onArtistNameClicked(context),
+                          child: Marquee(
+                            delay: const Duration(milliseconds: 300),
+                            duration: const Duration(seconds: 10),
+                            id: "${playerController.currentSong.value}_subtitle",
+                            child: Text(
+                              playerController.currentSong.value != null
+                                  ? playerController.currentSong.value!.artist!
+                                  : "NA",
+                              textAlign: TextAlign.start,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: Colors.white54,
+                                  ),
+                            ),
                           ),
                         )
                       ],
