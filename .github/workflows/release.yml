@@ -34,9 +34,12 @@ jobs:
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/upload-keystore.jks
 
       - name: Verify Keystore (Debug)
+        env:
+          STORE_PASS: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           ls -lh android/upload-keystore.jks
-          keytool -list -v -keystore android/upload-keystore.jks -storepass "${{ secrets.ANDROID_STORE_PASSWORD }}" -alias "${{ secrets.ANDROID_KEY_ALIAS }}"
+          keytool -list -v -keystore android/upload-keystore.jks -storepass "$STORE_PASS" -alias "$KEY_ALIAS"
 
       - name: Build and Sign Universal APK
         run: flutter build apk --release

@@ -51,11 +51,25 @@ android {
         versionName flutterVersionName
     }
 
+    signingConfigs {
+        release {
+            if (System.getenv("STORE_FILE") != null) {
+                storeFile file(System.getenv("STORE_FILE"))
+                storePassword System.getenv("STORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+            } else {
+                storeFile file('debug.keystore')
+                storePassword 'android'
+                keyAlias 'androiddebugkey'
+                keyPassword 'android'
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
         }
     }
     namespace 'com.anandnet.harmonymusic'
