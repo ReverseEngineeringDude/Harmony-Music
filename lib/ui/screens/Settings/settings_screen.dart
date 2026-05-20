@@ -671,6 +671,32 @@ class SettingsScreen extends StatelessWidget {
                   icon: Icons.miscellaneous_services,
                   title: "misc".tr,
                   children: [
+                    // ── Gemini AI Lyrics ────────────────────────────────────
+                    Obx(() => ListTile(
+                          contentPadding:
+                              const EdgeInsets.only(left: 5, right: 10),
+                          leading: const Icon(Icons.auto_awesome,
+                              color: Colors.deepPurple),
+                          title: Text("geminiApiKey".tr),
+                          subtitle: Text(
+                            settingsController.geminiApiKey.value.isEmpty
+                                ? "geminiApiKeyDes".tr
+                                : "geminiApiKeySet".tr,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          trailing:
+                              settingsController.geminiApiKey.value.isEmpty
+                                  ? null
+                                  : IconButton(
+                                      icon: const Icon(Icons.delete_outline,
+                                          size: 20),
+                                      tooltip: "geminiApiKeyClear".tr,
+                                      onPressed: () => settingsController
+                                          .setGeminiApiKey(''),
+                                    ),
+                          onTap: () => _showGeminiApiKeyDialog(
+                              context, settingsController),
+                        )),
                     ListTile(
                       contentPadding: const EdgeInsets.only(left: 5, right: 10),
                       title: Text("resetToDefault".tr),
@@ -739,6 +765,111 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showGeminiApiKeyDialog(
+    BuildContext context, SettingsScreenController controller) {
+  final textController =
+      TextEditingController(text: controller.geminiApiKey.value);
+  bool obscured = true;
+
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.auto_awesome, color: Colors.deepPurple),
+            const SizedBox(width: 8),
+            Text("geminiApiKey".tr),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "geminiApiKeyDialogDes".tr,
+              style: Theme.of(ctx).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: textController,
+              obscureText: obscured,
+              decoration: InputDecoration(
+                hintText: "AIza...",
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    obscured ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () => setState(() => obscured = !obscured),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "geminiModel".tr, // need to add this localization
+              style: Theme.of(ctx).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 8),
+            Obx(() {
+              if (controller.isFetchingModels.isTrue) {
+                return const Row(
+                  children: [
+                    SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                    SizedBox(width: 8),
+                    Text("Loading models..."),
+                  ],
+                );
+              }
+              final available = controller.availableGeminiModels;
+              if (available.isEmpty) {
+                return Text("Enter a valid API key to load models", style: TextStyle(color: Theme.of(ctx).colorScheme.error));
+              }
+              
+              return DropdownButtonFormField<String>(
+                value: available.contains(controller.geminiModel.value)
+                    ? controller.geminiModel.value
+                    : available.first,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: available.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    controller.setGeminiModel(val);
+                  }
+                },
+              );
+            }),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text("cancel".tr),
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.save_outlined, size: 18),
+            label: Text("save".tr),
+            onPressed: () {
+              controller.setGeminiApiKey(textController.text);
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("geminiApiKeySaved".tr),
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    ),
+  ).whenComplete(() => textController.dispose());
 }
 
 class ThemeSelectorDialog extends StatelessWidget {

@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import '../screens/Search/search_result_screen_controller.dart';
 import '/models/album.dart';
 import '/models/artist.dart';
-// import '/models/playlist.dart';
+import '/models/playlist.dart';
 import '/ui/widgets/content_list_widget.dart';
 import 'separate_tab_item_widget.dart';
 
@@ -46,7 +46,7 @@ class ResultWidget extends StatelessWidget {
                     const SizedBox(
                       height: 10,
                     ),
-                    ...generateWidgetList(searchResScrController),
+                    ...generateWidgetList(context, searchResScrController),
                   ])
                 : const SizedBox.shrink(),
           ),
@@ -56,33 +56,55 @@ class ResultWidget extends StatelessWidget {
   }
 
   List<Widget> generateWidgetList(
-      SearchResultScreenController searchResScrController) {
-    List<Widget> list = [];
+      BuildContext context, SearchResultScreenController searchResScrController) {
+    List<Widget> songsList = [];
+    List<Widget> otherList = [];
+    List<Widget> playlistsList = [];
+
     for (dynamic item in searchResScrController.resultContent.entries) {
-      if (item.key == "Songs" || item.key == "Videos") {
-        list.add(SeparateTabItemWidget(
+      final keyLower = item.key.toLowerCase();
+      if (keyLower == "songs" || keyLower == "videos") {
+        final w = SeparateTabItemWidget(
           items: List<MediaItem>.from(item.value),
           title: item.key,
           isCompleteList: false,
-        ));
-      } else if (item.key == "Albums") {
-        list.add(ContentListWidget(
+        );
+        if (keyLower == "songs") {
+          songsList.add(w);
+        } else {
+          otherList.add(w);
+        }
+      } else if (keyLower == "albums") {
+        otherList.add(ContentListWidget(
           content: AlbumContent(
               title: item.key, albumList: List<Album>.from(item.value)),
           isHomeContent: false,
         ));
       } 
-      // else if (item.key.contains("playlist")) {
-      //   list.add(ContentListWidget(
-      //     content: PlaylistContent(
-      //       title: item.key,
-      //       playlistList: List<Playlist>.from(item.value),
-      //     ),
-      //     isHomeContent: false,
-      //   ));
-      // } 
-      else if (item.key.contains("Artist")) {
-        list.add(SeparateTabItemWidget(
+      else if (item.key.toLowerCase().contains("playlist")) {
+        playlistsList.add(
+          Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              initiallyExpanded: false,
+              title: Text(item.key, style: Theme.of(context).textTheme.titleLarge),
+              tilePadding: const EdgeInsets.symmetric(horizontal: 0),
+              children: [
+                ContentListWidget(
+                  content: PlaylistContent(
+                    title: item.key,
+                    playlistList: List<Playlist>.from(item.value),
+                  ),
+                  isHomeContent: false,
+                  hideTitle: true,
+                )
+              ],
+            ),
+          )
+        );
+      } 
+      else if (keyLower.contains("artist")) {
+        otherList.add(SeparateTabItemWidget(
           items: List<Artist>.from(item.value),
           title: item.key,
           isCompleteList: false,
@@ -90,6 +112,6 @@ class ResultWidget extends StatelessWidget {
       }
     }
 
-    return list;
+    return [...songsList, ...otherList, ...playlistsList];
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:harmonymusic/services/permission_service.dart';
@@ -48,6 +49,10 @@ class SettingsScreenController extends GetxController {
   final restorePlaybackSession = false.obs;
   final cacheHomeScreenData = true.obs;
   final ultraHighQualityEnabled = false.obs;
+  final geminiApiKey = ''.obs;
+  final geminiModel = 'gemini-1.5-flash'.obs;
+  final availableGeminiModels = <String>[].obs;
+  final isFetchingModels = false.obs;
   final currentVersion = "V1.12.2";
 
   @override
@@ -131,6 +136,11 @@ class SettingsScreenController extends GetxController {
     autoDownloadFavoriteSongEnabled.value =
         setBox.get("autoDownloadFavoriteSongEnabled") ?? false;
     ultraHighQualityEnabled.value = setBox.get("ultraHighQualityEnabled") ?? false;
+    geminiApiKey.value = setBox.get('geminiApiKey') as String? ?? '';
+    geminiModel.value = setBox.get('geminiModel') as String? ?? 'gemini-1.5-flash';
+    if (geminiApiKey.value.isNotEmpty) {
+      fetchAvailableGeminiModels(geminiApiKey.value);
+    }
   }
 
   void setAppLanguage(String? val) {
@@ -352,6 +362,54 @@ class SettingsScreenController extends GetxController {
   void toggleStopPlyabackOnSwipeAway(bool val) {
     setBox.put('stopPlyabackOnSwipeAway', val);
     stopPlyabackOnSwipeAway.value = val;
+  }
+
+  void setGeminiApiKey(String key) {
+    final trimmed = key.trim();
+    setBox.put('geminiApiKey', trimmed);
+    geminiApiKey.value = trimmed;
+    if (trimmed.isNotEmpty) {
+      fetchAvailableGeminiModels(trimmed);
+    } else {
+      availableGeminiModels.clear();
+    }
+  }
+
+  void setGeminiModel(String model) {
+    setBox.put('geminiModel', model);
+    geminiModel.value = model;
+  }
+
+  Future<void> fetchAvailableGeminiModels(String apiKey) async {
+    isFetchingModels.value = true;
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey',
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final models = response.data['models'] as List;
+        final List<String> supported = [];
+        for (var m in models) {
+          if (m['supportedGenerationMethods'] != null &&
+              (m['supportedGenerationMethods'] as List).contains('generateContent')) {
+            // Strip the 'models/' prefix
+            final name = (m['name'] as String).replaceFirst('models/', '');
+            supported.add(name);
+          }
+        }
+        if (supported.isNotEmpty) {
+          availableGeminiModels.value = supported;
+          // Verify current model is still valid
+          if (!supported.contains(geminiModel.value)) {
+            setGeminiModel(supported.first);
+          }
+        }
+      }
+    } catch (e) {
+      print('Failed to fetch Gemini models: $e');
+    }
+    isFetchingModels.value = false;
   }
 
   Future<void> closeAllDatabases() async {

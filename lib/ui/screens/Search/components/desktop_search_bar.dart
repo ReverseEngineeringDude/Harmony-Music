@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'search_item.dart';
 import '/ui/screens/Search/search_screen_controller.dart';
+import '/ui/screens/Search/search_result_screen_controller.dart';
 
 import '../../../navigator.dart';
 
@@ -30,8 +31,15 @@ class DesktopSearchBar extends StatelessWidget {
                 searchScreenController.reset();
                 return;
               }
-              Get.toNamed(ScreenNavigationSetup.searchResultScreen,
-                  id: ScreenNavigationSetup.id, arguments: val);
+              if (Get.currentRoute == ScreenNavigationSetup.searchResultScreen) {
+                Get.find<SearchResultScreenController>()
+                    .onDestinationSelected(0, ignoreTabCommand: true);
+                Get.find<SearchResultScreenController>().queryString.value = val;
+                Get.find<SearchResultScreenController>().getInitSearchResult(query: val);
+              } else {
+                Get.toNamed(ScreenNavigationSetup.searchResultScreen,
+                    id: ScreenNavigationSetup.id, arguments: val);
+              }
               searchScreenController.addToHistryQueryList(val);
               searchScreenController.focusNode.unfocus();
             },

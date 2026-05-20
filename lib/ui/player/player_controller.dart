@@ -11,6 +11,7 @@ import '../../services/downloader.dart';
 import '../screens/Playlist/playlist_screen_controller.dart';
 import '../widgets/snackbar.dart';
 import '/services/synced_lyrics_service.dart';
+import '/services/gemini_lyrics_service.dart';
 import '/ui/screens/Settings/settings_screen_controller.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../services/windows_audio_service.dart';
@@ -65,6 +66,11 @@ class PlayerController extends GetxController
   final playinfrom = PlaylingFrom(type: PlaylingFromType.SELECTION).obs;
   final showLyricsflag = false.obs;
   final isLyricsLoading = false.obs;
+  final isLyricsAiGenerated = false.obs;
+  final isNoLyricsFound = false.obs;
+  final isLyricsTranslating = false.obs;
+  final isLyricsTranslated = false.obs;
+  final isSyncedLyricsGenerating = false.obs;
   final lyricsMode = 0.obs;
   bool isDesktopLyricsDialogOpen = false;
   // 0 for play, 1 for pause, 2 for blank
@@ -297,6 +303,10 @@ class PlayerController extends GetxController
           await _addRadioContinuation(radioInitiatorItem!);
         }
         lyrics.value = {"synced": "", "plainLyrics": ""};
+        isLyricsAiGenerated.value = false;
+        isNoLyricsFound.value = false;
+        isLyricsTranslated.value = false;
+        isSyncedLyricsGenerating.value = false;
         showLyricsflag.value = false;
         if (isDesktopLyricsDialogOpen) {
           Navigator.pop(Get.context!);
@@ -840,35 +850,174 @@ class PlayerController extends GetxController
     showLyricsflag.value = !showLyricsflag.value;
     if ((lyrics["synced"].isEmpty && lyrics['plainLyrics'].isEmpty) &&
         showLyricsflag.value) {
+      isNoLyricsFound.value = false;
       isLyricsLoading.value = true;
       try {
-        final Map<String, dynamic>? lyricsR =
-            await SyncedLyricsService.getSyncedLyrics(
-                currentSong.value!, progressBarStatus.value.total.inSeconds);
+        // ── 1. Fetch from lrclib and YouTube Music concurrently ─────────────
+        final lrclibFuture = SyncedLyricsService.getSyncedLyrics(
+            currentSong.value!, progressBarStatus.value.total.inSeconds);
+
+        final ytFuture = Future<String?>(() async {
+          try {
+            final related = await _musicServices
+                .getWatchPlaylist(
+                    videoId: currentSong.value!.id, onlyRelated: true)
+                .timeout(const Duration(seconds: 4));
+            final relatedLyricsId = related['lyrics'];
+            if (relatedLyricsId != null) {
+              return await _musicServices
+                  .getLyrics(relatedLyricsId)
+                  .timeout(const Duration(seconds: 4));
+            }
+          } catch (_) {}
+          return null;
+        });
+
+        final results = await Future.wait([lrclibFuture, ytFuture]);
+        final Map<String, dynamic>? lyricsR = results[0] as Map<String, dynamic>?;
+        final String? ytPlain = results[1] as String?;
+
         if (lyricsR != null) {
           lyrics.value = lyricsR;
           isLyricsLoading.value = false;
           return;
         }
-        final related = await _musicServices.getWatchPlaylist(
-            videoId: currentSong.value!.id, onlyRelated: true);
-        final relatedLyricsId = related['lyrics'];
-        if (relatedLyricsId != null) {
-          final lyrics_ = await _musicServices.getLyrics(relatedLyricsId);
-          lyrics.value = {"synced": "", "plainLyrics": lyrics_};
-        } else {
-          lyrics.value = {"synced": "", "plainLyrics": "NA"};
+
+        if (ytPlain != null && ytPlain.isNotEmpty) {
+          lyrics.value = {"synced": "", "plainLyrics": ytPlain};
+          isLyricsLoading.value = false;
+          return;
         }
+
+        // ── 2. No lyrics found – let user decide whether to use AI ─────────────
+        isNoLyricsFound.value = true;
       } catch (e) {
-        lyrics.value = {"synced": "", "plainLyrics": "NA"};
+        printERROR('showLyrics error: $e');
+        isNoLyricsFound.value = true;
       }
       isLyricsLoading.value = false;
     }
   }
 
+  /// Called when user taps "Use AI to find lyrics".
+  Future<void> generateAiLyrics() async {
+    if (isLyricsLoading.value) return;
+    final song = currentSong.value;
+    if (song == null) return;
+    isNoLyricsFound.value = false;
+    isLyricsLoading.value = true;
+    try {
+      final geminiLyrics = await GeminiLyricsService.generateLyrics(song);
+      if (geminiLyrics != null) {
+        lyrics.value = geminiLyrics;
+        isLyricsAiGenerated.value = true;
+      } else {
+        // Generation failed — show the button again
+        isNoLyricsFound.value = true;
+      }
+    } on GeminiQuotaException catch (e) {
+      isNoLyricsFound.value = true;
+      _showQuotaSnackbar(e);
+    } catch (e) {
+      printERROR('generateAiLyrics error: $e');
+      isNoLyricsFound.value = true;
+    }
+    isLyricsLoading.value = false;
+  }
+
+  /// Translates the currently loaded lyrics to the app's display language
+  /// using Gemini AI.
+  Future<void> translateLyricsWithAi() async {
+    if (isLyricsTranslating.isTrue) return;
+    final song = currentSong.value;
+    if (song == null) return;
+    final plain = lyrics['plainLyrics'] ?? '';
+    if (plain.isEmpty || plain == 'NA') return;
+
+    isLyricsTranslating.value = true;
+    try {
+      final targetLang =
+          Get.find<SettingsScreenController>().currentAppLanguageCode.value;
+      final translated = await GeminiLyricsService.translateLyrics(
+        plainLyrics: plain,
+        syncedLyrics: lyrics['synced'] ?? '',
+        targetLanguage: targetLang,
+      );
+      if (translated != null) {
+        lyrics.value = translated;
+        isLyricsTranslated.value = true;
+      }
+    } on GeminiQuotaException catch (e) {
+      _showQuotaSnackbar(e);
+    } catch (e) {
+      printERROR('translateLyricsWithAi error: $e');
+    }
+    isLyricsTranslating.value = false;
+  }
+
+  void _showQuotaSnackbar(GeminiQuotaException e) {
+    final ctx = Get.context;
+    if (ctx == null) return;
+    final retryMsg = e.retryAfterSeconds > 0
+        ? ' ${'retryIn'.tr} ${e.retryAfterSeconds} ${'seconds'.tr}.'
+        : '';
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      snackbar(
+        ctx,
+        '${'geminiQuotaExceeded'.tr}$retryMsg',
+        size: SanckBarSize.BIG,
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
   void changeLyricsMode(int? val) {
     Hive.box("AppPrefs").put("lyricsMode", val);
     lyricsMode.value = val!;
+  }
+
+  /// Generates synced (LRC) lyrics using the existing plain lyrics text.
+  /// Only updates the 'synced' key — plain lyrics are preserved.
+  Future<void> generateAiSyncedLyrics() async {
+    if (isSyncedLyricsGenerating.value) return;
+    final song = currentSong.value;
+    if (song == null) return;
+    final plain = lyrics['plainLyrics'] ?? '';
+    if (plain.isEmpty || plain == 'NA') return;
+
+    isSyncedLyricsGenerating.value = true;
+    try {
+      final synced = await GeminiLyricsService.generateSyncedFromPlain(
+        title: song.title,
+        artist: song.artist?.split(',').first.trim() ?? 'Unknown',
+        plainLyrics: plain,
+        durationSec: progressBarStatus.value.total.inSeconds,
+      );
+      if (synced != null && synced.isNotEmpty) {
+        // Merge synced into existing lyrics map
+        lyrics.value = {
+          'synced': synced,
+          'plainLyrics': plain,
+        };
+        isLyricsAiGenerated.value = true;
+      }
+    } on GeminiQuotaException catch (e) {
+      _showQuotaSnackbar(e);
+    } catch (e) {
+      printERROR('generateAiSyncedLyrics error: $e');
+    }
+    isSyncedLyricsGenerating.value = false;
+  }
+
+  /// Clears the Gemini cache for the current song and regenerates fresh lyrics.
+  Future<void> retryAiLyrics() async {
+    final song = currentSong.value;
+    if (song == null) return;
+    isLyricsAiGenerated.value = false;
+    isLyricsTranslated.value = false;
+    lyrics.value = {"synced": "", "plainLyrics": ""};
+    await GeminiLyricsService.clearCache(song.id);
+    await generateAiLyrics();
   }
 
   void sleepEndOfSong() {

@@ -10,11 +10,13 @@ class ContentListWidget extends StatelessWidget {
       {super.key,
       this.content,
       this.isHomeContent = true,
+      this.hideTitle = false,
       this.scrollController});
 
   ///content will be of class Type AlbumContent or PlaylistContent
   final dynamic content;
   final bool isHomeContent;
+  final bool hideTitle;
   final ScrollController? scrollController;
 
   @override
@@ -25,33 +27,34 @@ class ContentListWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    !isHomeContent && content.title.length > 12
-                        ? "${content.title.substring(0, 12)}..."
-                        : content.title,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleLarge,
+          if (!hideTitle)
+            SizedBox(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      !isHomeContent && content.title.length > 12
+                          ? "${content.title.substring(0, 12)}..."
+                          : content.title,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
-                ),
-                !isHomeContent
-                    ? TextButton(
-                        onPressed: () {
-                          final scrresController =
-                              Get.find<SearchResultScreenController>();
-                          scrresController.viewAllCallback(content.title);
-                        },
-                        child: Text("viewAll".tr,
-                            style: Theme.of(Get.context!).textTheme.titleSmall))
-                    : const SizedBox.shrink()
-              ],
+                  !isHomeContent
+                      ? TextButton(
+                          onPressed: () {
+                            final scrresController =
+                                Get.find<SearchResultScreenController>();
+                            scrresController.viewAllCallback(content.title);
+                          },
+                          child: Text("viewAll".tr,
+                              style: Theme.of(context).textTheme.titleSmall))
+                      : const SizedBox.shrink()
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 5),
+          if (!hideTitle) const SizedBox(height: 5),
           SizedBox(
             height: 200,
             //color: Colors.blueAccent,

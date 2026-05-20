@@ -12,7 +12,10 @@ class SyncedLyricsService {
       return Map<String, dynamic>.from(await lyricsBox.get(song.id));
     }
 
-    final dio = Dio();
+    final dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 4),
+      receiveTimeout: const Duration(seconds: 4),
+    ));
     final dur = song.duration?.inSeconds ?? durInSec;
 
     // ── Primary: exact match by artist / track / album / duration ─────────

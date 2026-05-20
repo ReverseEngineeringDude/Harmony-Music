@@ -661,8 +661,19 @@ class MusicServices extends getx.GetxService {
 
     String? type;
 
+    final List<dynamic> standaloneItems = [];
     for (var res in results) {
       String category;
+      if (res['itemSectionRenderer'] != null) {
+        if (res['itemSectionRenderer']['contents'] != null) {
+          final contents = res['itemSectionRenderer']['contents'] as List;
+          for (var item in contents) {
+            if (item['musicResponsiveListItemRenderer'] != null) {
+              standaloneItems.add(item);
+            }
+          }
+        }
+      }
       if (res['musicShelfRenderer'] != null) {
         dynamic itemResults = res['musicShelfRenderer']['contents'];
         String? typeFilter = filter;
@@ -672,7 +683,7 @@ class MusicServices extends getx.GetxService {
         if (filter == null) {
           for (var item in mixedItems) {
             final itemType = item.runtimeType == MediaItem
-                ? (item.artist.split(",")[0]) + "s"
+                ? "Songs"
                 : "${item.runtimeType}s";
             if (searchResults.containsKey(itemType) &&
                 (searchResults[itemType]).length < 3) {
@@ -722,6 +733,19 @@ class MusicServices extends getx.GetxService {
             ...(searchResults[category] as List),
             ...(x[0])
           ];
+        }
+      }
+    }
+
+    if (standaloneItems.isNotEmpty && filter == null) {
+      final mixedItems = parseSearchResults(standaloneItems,
+          ['artist', 'playlist', 'song', 'video', 'station'], type, "mixed");
+      for (var item in mixedItems) {
+        final itemType = item.runtimeType == MediaItem ? "Songs" : "${item.runtimeType}s";
+        if (searchResults.containsKey(itemType) && (searchResults[itemType]).length < 30) {
+            (searchResults[itemType] as List).add(item);
+        } else if (!searchResults.containsKey(itemType)) {
+            searchResults[itemType] = [item];
         }
       }
     }

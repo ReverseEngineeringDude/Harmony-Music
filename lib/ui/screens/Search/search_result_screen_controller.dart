@@ -27,7 +27,7 @@ class SearchResultScreenController extends GetxController
 
   @override
   void onReady() {
-    _getInitSearchResult();
+    getInitSearchResult();
     Get.find<HomeScreenController>().whenHomeScreenOnTop();
     super.onReady();
   }
@@ -91,9 +91,9 @@ class SearchResultScreenController extends GetxController
     onDestinationSelected(railItems.indexOf(text) + 1);
   }
 
-  Future<void> _getInitSearchResult() async {
+  Future<void> getInitSearchResult({String? query}) async {
     isResultContentFetced.value = false;
-    final args = Get.arguments;
+    final args = query ?? Get.arguments;
     if (args != null) {
       queryString.value = args;
       resultContent.value = await musicServices.search(args);

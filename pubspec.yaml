@@ -85,6 +85,7 @@ dependencies:
       url: https://github.com/anandnet/youtube_explode_dart.git
       ref: 1d9ec9baa806705b1d859260eeb389ec28c6b024
   speech_to_text: ^7.3.0
+  google_generative_ai: ^0.4.6
 dev_dependencies:
 
   # The "flutter_lints" package below contains a set of recommended lints to
