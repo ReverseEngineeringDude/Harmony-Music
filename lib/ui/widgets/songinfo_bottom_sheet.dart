@@ -259,7 +259,7 @@ class SongInfoBottomSheet extends StatelessWidget {
                         launchUrl(Uri.parse(
                             "https://youtube.com/watch?v=${song.id}"));
                       },
-                      icon: const Icon(FontAwesomeIcons.youtube),
+                      icon: const FaIcon(FontAwesomeIcons.youtube),
                     ),
                     IconButton(
                       splashRadius: 10,
