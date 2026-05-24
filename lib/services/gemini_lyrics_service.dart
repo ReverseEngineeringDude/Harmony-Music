@@ -32,7 +32,8 @@ class GeminiLyricsService {
     // ── 1. Load API key ──────────────────────────────────────────────────────
     final prefs = Hive.box('AppPrefs');
     final apiKey = (prefs.get('geminiApiKey') as String? ?? '').trim();
-    final String modelName = prefs.get('geminiModel') as String? ?? 'gemini-1.5-flash';
+    String modelName = prefs.get('geminiModel') as String? ?? 'gemini-flash-latest';
+    if (modelName == 'gemini-1.5-flash') modelName = 'gemini-flash-latest';
     if (apiKey.isEmpty) {
       printINFO('GeminiLyrics: no API key configured, skipping AI generation');
       return null;
@@ -153,7 +154,8 @@ Rules for plainLyrics:
   }) async {
     final prefs = Hive.box('AppPrefs');
     final apiKey = (prefs.get('geminiApiKey') as String? ?? '').trim();
-    final String modelName = prefs.get('geminiModel') as String? ?? 'gemini-1.5-flash';
+    String modelName = prefs.get('geminiModel') as String? ?? 'gemini-flash-latest';
+    if (modelName == 'gemini-1.5-flash') modelName = 'gemini-flash-latest';
     if (apiKey.isEmpty || plainLyrics.isEmpty) return null;
 
     final prompt = '''
@@ -225,7 +227,8 @@ $plainLyrics
   }) async {
     final prefs = Hive.box('AppPrefs');
     final apiKey = (prefs.get('geminiApiKey') as String? ?? '').trim();
-    final String modelName = prefs.get('geminiModel') as String? ?? 'gemini-1.5-flash';
+    String modelName = prefs.get('geminiModel') as String? ?? 'gemini-flash-latest';
+    if (modelName == 'gemini-1.5-flash') modelName = 'gemini-flash-latest';
     if (apiKey.isEmpty || plainLyrics.isEmpty) return null;
 
     final langName = _langCodeToName(targetLanguage);

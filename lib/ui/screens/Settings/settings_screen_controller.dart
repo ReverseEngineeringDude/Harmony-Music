@@ -50,7 +50,7 @@ class SettingsScreenController extends GetxController {
   final cacheHomeScreenData = true.obs;
   final ultraHighQualityEnabled = false.obs;
   final geminiApiKey = ''.obs;
-  final geminiModel = 'gemini-1.5-flash'.obs;
+  final geminiModel = 'gemini-flash-latest'.obs;
   final availableGeminiModels = <String>[].obs;
   final isFetchingModels = false.obs;
   final currentVersion = "V1.12.2";
@@ -137,7 +137,9 @@ class SettingsScreenController extends GetxController {
         setBox.get("autoDownloadFavoriteSongEnabled") ?? false;
     ultraHighQualityEnabled.value = setBox.get("ultraHighQualityEnabled") ?? false;
     geminiApiKey.value = setBox.get('geminiApiKey') as String? ?? '';
-    geminiModel.value = setBox.get('geminiModel') as String? ?? 'gemini-1.5-flash';
+    String loadedModel = setBox.get('geminiModel') as String? ?? 'gemini-flash-latest';
+    if (loadedModel == 'gemini-1.5-flash') loadedModel = 'gemini-flash-latest';
+    geminiModel.value = loadedModel;
     if (geminiApiKey.value.isNotEmpty) {
       fetchAvailableGeminiModels(geminiApiKey.value);
     }
