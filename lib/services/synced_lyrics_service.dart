@@ -18,9 +18,14 @@ class SyncedLyricsService {
     ));
     final dur = song.duration?.inSeconds ?? durInSec;
 
+    String actualArtist = song.artist?.split(",").first.trim() ?? "";
+    if (actualArtist.toLowerCase() == "song" || actualArtist.toLowerCase() == "video") {
+      actualArtist = song.artist?.split(",").skip(1).firstOrNull?.trim() ?? "";
+    }
+
     // ── Primary: exact match by artist / track / album / duration ─────────
     final exactUrl =
-        'https://lrclib.net/api/get?artist_name=${Uri.encodeQueryComponent(song.artist?.split(",").first.trim() ?? "")}'
+        'https://lrclib.net/api/get?artist_name=${Uri.encodeQueryComponent(actualArtist)}'
         '&track_name=${Uri.encodeQueryComponent(song.title)}'
         '&album_name=${Uri.encodeQueryComponent(song.album ?? "")}'
         '&duration=$dur';
@@ -46,7 +51,7 @@ class SyncedLyricsService {
     // ── Secondary: fuzzy search by track name ─────────────────────────────
     final searchUrl =
         'https://lrclib.net/api/search?track_name=${Uri.encodeQueryComponent(song.title)}'
-        '&artist_name=${Uri.encodeQueryComponent(song.artist?.split(",").first.trim() ?? "")}';
+        '&artist_name=${Uri.encodeQueryComponent(actualArtist)}';
     try {
       final results = (await dio.get(searchUrl)).data;
       if (results is List && results.isNotEmpty) {

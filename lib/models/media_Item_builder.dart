@@ -7,8 +7,10 @@ class MediaItemBuilder {
   static MediaItem fromJson(dynamic json, {String? url}) {
     String? artistName;
     if (json['artists'] != null) {
-      artistName =
-          json['artists']?.map((e) => e['name']).toList().join(', ').toString();
+      final validArtists = (json['artists'] as List)
+          .where((e) => e['name'] != 'Song' && e['name'] != 'Video')
+          .toList();
+      artistName = validArtists.map((e) => e['name']).join(', ');
     }
 
     Map? album;
