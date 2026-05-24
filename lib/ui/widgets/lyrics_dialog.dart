@@ -23,77 +23,7 @@ class LyricsDialog extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const LyricsSwitch(),
-                Obx(() {
-                  final hasLyrics =
-                      (pc.lyrics['plainLyrics'] ?? '').isNotEmpty &&
-                          pc.lyrics['plainLyrics'] != 'NA';
-                  if (!hasLyrics) return const SizedBox.shrink();
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(width: 8),
-                      // Translate chip
-                      _DialogChip(
-                        icon: pc.isLyricsTranslating.isTrue
-                            ? const SizedBox(
-                                width: 12,
-                                height: 12,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 1.5),
-                              )
-                            : Icon(
-                                pc.isLyricsTranslated.isTrue
-                                    ? Icons.check_circle_outline
-                                    : Icons.translate,
-                                size: 14,
-                              ),
-                        label: pc.isLyricsTranslated.isTrue
-                            ? 'lyricsTranslated'.tr
-                            : 'translateLyrics'.tr,
-                        onTap: pc.isLyricsTranslating.isTrue
-                            ? null
-                            : pc.translateLyricsWithAi,
-                        color: pc.isLyricsTranslated.isTrue
-                            ? Colors.teal
-                            : Theme.of(context).colorScheme.secondaryContainer,
-                        labelColor: pc.isLyricsTranslated.isTrue
-                            ? Colors.white
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSecondaryContainer,
-                      ),
-                      // AI chip + retry (only when AI-generated)
-                      if (pc.isLyricsAiGenerated.isTrue) ...[
-                        const SizedBox(width: 6),
-                        _DialogChip(
-                          icon: const Icon(Icons.auto_awesome, size: 14,
-                              color: Colors.white),
-                          label: 'AI',
-                          onTap: null,
-                          color: Colors.deepPurple,
-                          labelColor: Colors.white,
-                        ),
-                        const SizedBox(width: 4),
-                        Tooltip(
-                          message: 'retryAiLyrics'.tr,
-                          child: InkWell(
-                            onTap: pc.retryAiLyrics,
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.deepPurple.withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.refresh_rounded,
-                                  size: 14, color: Colors.deepPurple),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  );
-                }),
+
               ],
             ),
           ),

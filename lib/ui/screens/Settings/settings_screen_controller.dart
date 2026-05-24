@@ -49,10 +49,7 @@ class SettingsScreenController extends GetxController {
   final restorePlaybackSession = false.obs;
   final cacheHomeScreenData = true.obs;
   final ultraHighQualityEnabled = false.obs;
-  final geminiApiKey = ''.obs;
-  final geminiModel = 'gemini-flash-latest'.obs;
-  final availableGeminiModels = <String>[].obs;
-  final isFetchingModels = false.obs;
+
   final currentVersion = "V1.12.2";
 
   @override
@@ -136,15 +133,7 @@ class SettingsScreenController extends GetxController {
     autoDownloadFavoriteSongEnabled.value =
         setBox.get("autoDownloadFavoriteSongEnabled") ?? false;
     ultraHighQualityEnabled.value = setBox.get("ultraHighQualityEnabled") ?? false;
-    geminiApiKey.value = setBox.get('geminiApiKey') as String? ?? '';
-    String loadedModel = setBox.get('geminiModel') as String? ?? 'gemini-flash-latest';
-    if (loadedModel == 'gemini-1.5-flash') loadedModel = 'gemini-flash-latest';
-    geminiModel.value = loadedModel;
-    if (geminiApiKey.value.isNotEmpty) {
-      fetchAvailableGeminiModels(geminiApiKey.value);
-    }
   }
-
   void setAppLanguage(String? val) {
     Get.updateLocale(Locale(val!));
     Get.find<MusicServices>().hlCode = val;
@@ -366,53 +355,7 @@ class SettingsScreenController extends GetxController {
     stopPlyabackOnSwipeAway.value = val;
   }
 
-  void setGeminiApiKey(String key) {
-    final trimmed = key.trim();
-    setBox.put('geminiApiKey', trimmed);
-    geminiApiKey.value = trimmed;
-    if (trimmed.isNotEmpty) {
-      fetchAvailableGeminiModels(trimmed);
-    } else {
-      availableGeminiModels.clear();
-    }
-  }
 
-  void setGeminiModel(String model) {
-    setBox.put('geminiModel', model);
-    geminiModel.value = model;
-  }
-
-  Future<void> fetchAvailableGeminiModels(String apiKey) async {
-    isFetchingModels.value = true;
-    try {
-      final dio = Dio();
-      final response = await dio.get(
-        'https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey',
-      );
-      if (response.statusCode == 200 && response.data != null) {
-        final models = response.data['models'] as List;
-        final List<String> supported = [];
-        for (var m in models) {
-          if (m['supportedGenerationMethods'] != null &&
-              (m['supportedGenerationMethods'] as List).contains('generateContent')) {
-            // Strip the 'models/' prefix
-            final name = (m['name'] as String).replaceFirst('models/', '');
-            supported.add(name);
-          }
-        }
-        if (supported.isNotEmpty) {
-          availableGeminiModels.value = supported;
-          // Verify current model is still valid
-          if (!supported.contains(geminiModel.value)) {
-            setGeminiModel(supported.first);
-          }
-        }
-      }
-    } catch (e) {
-      print('Failed to fetch Gemini models: $e');
-    }
-    isFetchingModels.value = false;
-  }
 
   Future<void> closeAllDatabases() async {
     await Hive.close();
