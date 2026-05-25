@@ -16,6 +16,7 @@ import '../../widgets/content_list_widget.dart';
 import '../../widgets/quickpickswidget.dart';
 import '../../widgets/shimmer_widgets/home_shimmer.dart';
 import 'home_screen_controller.dart';
+import 'now_playing_home_widget.dart';
 import 'for_you_widget.dart';
 import '../Settings/settings_screen.dart';
 
@@ -146,6 +147,7 @@ class Body extends StatelessWidget {
                         final items = homeScreenController
                                 .isContentFetched.value
                             ? [
+                                const NowPlayingHomeWidget(),
                                 const ForYouWidget(),
                                 Obx(() {
                                   final scrollController = ScrollController();

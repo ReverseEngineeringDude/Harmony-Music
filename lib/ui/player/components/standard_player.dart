@@ -136,6 +136,9 @@ class StandardPlayer extends StatelessWidget {
                             ),
                     ),
 
+                    /// Push the image down to close the gap with controls
+                    const Spacer(),
+
                     /// Contains the lyrics switch and album art with lyrics
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -148,8 +151,8 @@ class StandardPlayer extends StatelessWidget {
                       ],
                     ),
 
-                    /// Extra space container
-                    Expanded(child: Container()),
+                    /// Fixed gap instead of Expanded
+                    const SizedBox(height: 40),
 
                     /// Contains the player controls
                     Padding(
