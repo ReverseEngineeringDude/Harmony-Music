@@ -47,6 +47,7 @@ class BackgroudImage extends StatelessWidget {
                             imgFile,
                             cacheHeight: cacheHeight,
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                           );
                         }
                         return const SizedBox.shrink();

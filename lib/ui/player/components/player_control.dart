@@ -71,7 +71,6 @@ class PlayerControlWidget extends StatelessWidget {
                               textAlign: TextAlign.start,
                               overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.labelSmall!.copyWith(
-                                    decoration: TextDecoration.underline,
                                     decorationColor: Colors.white54,
                                   ),
                             ),

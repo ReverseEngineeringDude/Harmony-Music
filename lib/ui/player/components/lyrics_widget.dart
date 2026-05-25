@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../widgets/shimmer_widgets/lyrics_shimmer.dart';
 import '../player_controller.dart';
 import 'smooth_lyrics_reader.dart';
+import '../../screens/Settings/settings_screen_controller.dart';
 
 class LyricsWidget extends StatelessWidget {
   final EdgeInsetsGeometry padding;
@@ -67,8 +68,17 @@ class LyricsWidget extends StatelessWidget {
           if (pc.lyricsMode.toInt() == 0 && (pc.lyrics['synced'] ?? '').toString().trim().isNotEmpty)
             Positioned(
               bottom: 8,
-              right: 8,
-              child: _LyricsOffsetControls(pc: pc),
+              left: 0,
+              right: 0,
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _TransliterateButton(pc: pc),
+                  _LyricsOffsetControls(pc: pc),
+                ],
+              ),
             ),
         ],
       );
@@ -161,5 +171,69 @@ class _SyncedEmptyWidget extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _TransliterateButton extends StatelessWidget {
+  final PlayerController pc;
+  const _TransliterateButton({required this.pc});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isDesktop = pc.isDesktopLyricsDialogOpen;
+    final bgColor = isDesktop
+        ? Theme.of(context).colorScheme.surfaceContainerHigh
+        : Colors.black.withValues(alpha: 0.55);
+    final fgColor = isDesktop
+        ? Theme.of(context).colorScheme.onSurface
+        : Colors.white;
+
+    return Obx(() {
+      if (Get.find<SettingsScreenController>().isTransliterationEnabled.isFalse) {
+        return const SizedBox.shrink();
+      }
+      final isTransliterating = pc.isLyricsTransliterating.value;
+      final isTransliterated = pc.isLyricsTransliterated.value;
+
+      return InkWell(
+        onTap: isTransliterating ? null : pc.transliterateLyrics,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isTransliterated ? Colors.teal : bgColor,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2))
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isTransliterating)
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: isTransliterated ? Colors.white : fgColor),
+                )
+              else
+                Icon(isTransliterated ? Icons.spellcheck : Icons.translate, size: 16, color: isTransliterated ? Colors.white : fgColor),
+              const SizedBox(width: 4),
+              Text(
+                isTransliterated ? 'Transliterated' : 'Transliterate',
+                style: TextStyle(
+                  color: isTransliterated ? Colors.white : fgColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
   }
 }

@@ -11,6 +11,7 @@ import '../../services/downloader.dart';
 import '../screens/Playlist/playlist_screen_controller.dart';
 import '../widgets/snackbar.dart';
 import '/services/synced_lyrics_service.dart';
+import '../../services/transliteration_service.dart';
 
 import '/ui/screens/Settings/settings_screen_controller.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -66,7 +67,8 @@ class PlayerController extends GetxController
   final playinfrom = PlaylingFrom(type: PlaylingFromType.SELECTION).obs;
   final showLyricsflag = false.obs;
   final isLyricsLoading = false.obs;
-
+  final isLyricsTransliterating = false.obs;
+  final isLyricsTransliterated = false.obs;
   final lyricsMode = 0.obs;
   bool isDesktopLyricsDialogOpen = false;
   // 0 for play, 1 for pause, 2 for blank
@@ -76,6 +78,7 @@ class PlayerController extends GetxController
   LyricUI get lyricUi => HarmonyLyricUI();
   RxMap<String, dynamic> lyrics =
       <String, dynamic>{"synced": "", "plainLyrics": ""}.obs;
+  final originalLyrics = <String, dynamic>{}.obs;
   final lyricsOffset = 0.obs;
   ScrollController scrollController = ScrollController();
   final GlobalKey<ScaffoldState> homeScaffoldkey = GlobalKey<ScaffoldState>();
@@ -300,6 +303,7 @@ class PlayerController extends GetxController
           await _addRadioContinuation(radioInitiatorItem!);
         }
         lyrics.value = {"synced": "", "plainLyrics": ""};
+        originalLyrics.clear();
         lyricsOffset.value = 0;
         showLyricsflag.value = false;
         if (isDesktopLyricsDialogOpen) {
@@ -847,6 +851,7 @@ class PlayerController extends GetxController
       isLyricsLoading.value = true;
       try {
         // ── 1. Fetch from lrclib and YouTube Music concurrently ─────────────
+        isLyricsTransliterated.value = false;
         final lrclibFuture = SyncedLyricsService.getSyncedLyrics(
             currentSong.value!, progressBarStatus.value.total.inSeconds);
 
@@ -889,6 +894,41 @@ class PlayerController extends GetxController
         lyrics.value = {"synced": "", "plainLyrics": "NA"};
       }
       isLyricsLoading.value = false;
+    }
+  }
+
+  Future<void> transliterateLyrics() async {
+    if (isLyricsTransliterated.value) {
+      if (originalLyrics.isNotEmpty) {
+        lyrics.value = Map<String, dynamic>.from(originalLyrics);
+        lyrics.refresh();
+      }
+      isLyricsTransliterated.value = false;
+      return;
+    }
+
+    originalLyrics.value = Map<String, dynamic>.from(lyrics);
+    final targetLang = Hive.box("AppPrefs").get("transliterationTargetLanguage") ?? "Malayalam";
+    
+    isLyricsTransliterating.value = true;
+    try {
+      if (lyrics['synced'] != null && lyrics['synced'].toString().trim().isNotEmpty) {
+        final currentSynced = lyrics['synced'].toString();
+        final newSynced = await TransliterationService.transliterateLrc(currentSynced, targetLang);
+        lyrics['synced'] = newSynced;
+        lyrics.refresh();
+        isLyricsTransliterated.value = true;
+      } else if (lyrics['plainLyrics'] != null && lyrics['plainLyrics'] != 'NA' && lyrics['plainLyrics'].toString().trim().isNotEmpty) {
+        final currentPlain = lyrics['plainLyrics'].toString();
+        final newPlain = await TransliterationService.transliterate(currentPlain, targetLang);
+        lyrics['plainLyrics'] = newPlain;
+        lyrics.refresh();
+        isLyricsTransliterated.value = true;
+      }
+    } catch (e) {
+      printERROR("Transliteration Error: $e");
+    } finally {
+      isLyricsTransliterating.value = false;
     }
   }
 

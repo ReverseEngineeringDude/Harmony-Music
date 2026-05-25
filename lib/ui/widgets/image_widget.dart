@@ -68,6 +68,17 @@ class ImageWidget extends StatelessWidget {
               height: size,
               width: size,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondary,
+                      shape: artist != null ? BoxShape.circle : BoxShape.rectangle,
+                      borderRadius: artist != null ? null : BorderRadius.circular(10),
+                    ),
+                    child: Image.asset(
+                        "assets/icons/${song != null ? "song" : artist != null ? "artist" : "album"}.png"));
+              },
             )
           : CachedNetworkImage(
               height: size,

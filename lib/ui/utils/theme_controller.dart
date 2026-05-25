@@ -62,28 +62,32 @@ class ThemeController extends GetxController {
 
   void setTheme(ImageProvider imageProvider, String songId) async {
     if (songId == currentSongId) return;
-    PaletteGenerator generator = await PaletteGenerator.fromImageProvider(
-        ResizeImage(imageProvider, height: 200, width: 200));
-    //final colorList = generator.colors;
-    final paletteColor = generator.dominantColor ??
-        generator.darkMutedColor ??
-        generator.darkVibrantColor ??
-        generator.lightMutedColor ??
-        generator.lightVibrantColor;
-    primaryColor.value = paletteColor!.color;
-    textColor.value = paletteColor.bodyTextColor;
-    // printINFO(paletteColor.color.computeLuminance().toString());0.11 ref
-    if (paletteColor.color.computeLuminance() > 0.10) {
-      primaryColor.value = paletteColor.color.withLightness(0.10);
-      textColor.value = Colors.white54;
+    try {
+      PaletteGenerator generator = await PaletteGenerator.fromImageProvider(
+          ResizeImage(imageProvider, height: 200, width: 200));
+      //final colorList = generator.colors;
+      final paletteColor = generator.dominantColor ??
+          generator.darkMutedColor ??
+          generator.darkVibrantColor ??
+          generator.lightMutedColor ??
+          generator.lightVibrantColor;
+      primaryColor.value = paletteColor!.color;
+      textColor.value = paletteColor.bodyTextColor;
+      // printINFO(paletteColor.color.computeLuminance().toString());0.11 ref
+      if (paletteColor.color.computeLuminance() > 0.10) {
+        primaryColor.value = paletteColor.color.withLightness(0.10);
+        textColor.value = Colors.white54;
+      }
+      final primarySwatch = _createMaterialColor(primaryColor.value!);
+      themedata.value = _createThemeData(primarySwatch, ThemeType.dynamic,
+          textColor: textColor.value,
+          titleColorSwatch: _createMaterialColor(textColor.value));
+      currentSongId = songId;
+      Hive.box('appPrefs').put("themePrimaryColor", (primaryColor.value!).value);
+      setWindowsTitleBarColor(themedata.value!.scaffoldBackgroundColor);
+    } catch (e) {
+      printERROR("setTheme error: $e");
     }
-    final primarySwatch = _createMaterialColor(primaryColor.value!);
-    themedata.value = _createThemeData(primarySwatch, ThemeType.dynamic,
-        textColor: textColor.value,
-        titleColorSwatch: _createMaterialColor(textColor.value));
-    currentSongId = songId;
-    Hive.box('appPrefs').put("themePrimaryColor", (primaryColor.value!).value);
-    setWindowsTitleBarColor(themedata.value!.scaffoldBackgroundColor);
   }
 
   ThemeData _createThemeData(MaterialColor? primarySwatch, ThemeType themeType,

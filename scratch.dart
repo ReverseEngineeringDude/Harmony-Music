@@ -1,9 +1,8 @@
-import 'dart:convert';
+import 'package:harmonymusic/services/transliteration_service.dart';
 import 'package:http/http.dart' as http;
-import 'package:hive_flutter/hive_flutter.dart';
-import 'dart:io';
 
 void main() async {
-  Hive.init('./.hive_data'); // Or wherever Hive is. But this is a Flutter app.
-  print('Done');
+  final url = Uri.parse('https://aksharamukha-plugin.appspot.com/api/public?source=IAST&target=Malayalam&text=Anbe Sivam');
+  final response = await http.get(url);
+  print(response.body);
 }

@@ -798,7 +798,8 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
     printINFO("Requested id : $songId");
     final songDownloadsBox = Hive.box("SongDownloads");
     if (!offlineReplacementUrl &&
-        (await Hive.openBox("SongsCache")).containsKey(songId)) {
+        (await Hive.openBox("SongsCache")).containsKey(songId) &&
+        await File("$_cacheDir/cachedSongs/$songId.mp3").exists()) {
       printINFO("Got Song from cachedbox ($songId)");
       // if contains stream Info
       final streamInfo = Hive.box("SongsCache").get(songId)["streamInfo"];
@@ -848,14 +849,17 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
           lowQualityAudio: audio,
           ultraHighQualityAudio: audio);
 
-      if (path.contains(
-          "${Get.find<SettingsScreenController>().supportDirPath}/Music")) {
-        return streamInfo;
-      }
-      //check file access and if file exist in storage
-      final status = await PermissionService.getExtStoragePermission();
-      if (status && await File(path).exists()) {
-        return streamInfo;
+      final checkPath = path.startsWith("file://") ? path.replaceFirst("file://", "") : path;
+      if (path.contains("${Get.find<SettingsScreenController>().supportDirPath}/Music")) {
+        if (await File(checkPath).exists()) {
+          return streamInfo;
+        }
+      } else {
+        //check file access and if file exist in storage
+        final status = await PermissionService.getExtStoragePermission();
+        if (status && await File(checkPath).exists()) {
+          return streamInfo;
+        }
       }
       //in case file doesnot found in storage, song will be played online
       return checkNGetUrl(songId, offlineReplacementUrl: true);

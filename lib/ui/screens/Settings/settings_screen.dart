@@ -539,6 +539,55 @@ class SettingsScreen extends StatelessWidget {
                           ),
                         )
                       : const SizedBox.shrink(),
+                  ListTile(
+                    contentPadding: const EdgeInsets.only(left: 5, right: 10),
+                    title: const Text("Enable Lyrics Transliteration"),
+                    subtitle: Text("Convert lyrics from Indic/English scripts",
+                        style: Theme.of(context).textTheme.bodyMedium),
+                    trailing: Obx(
+                      () => CustSwitch(
+                        value: settingsController.isTransliterationEnabled.value,
+                        onChanged: settingsController.toggleTransliterationFeature,
+                      ),
+                    ),
+                  ),
+                  Obx(
+                    () => settingsController.isTransliterationEnabled.isTrue
+                        ? ListTile(
+                            contentPadding: const EdgeInsets.only(left: 5, right: 10),
+                            title: const Text("Transliteration Target Language"),
+                    subtitle: Text("Target script for lyrics transliteration",
+                        style: Theme.of(context).textTheme.bodyMedium),
+                    trailing: Obx(
+                      () => SizedBox(
+                        width: 120,
+                        child: DropdownButton<String>(
+                          isExpanded: true,
+                          dropdownColor: Theme.of(context).cardColor,
+                          underline: const SizedBox.shrink(),
+                          value: settingsController.transliterationTargetLanguage.value,
+                          items: const [
+                            DropdownMenuItem(value: "Malayalam", child: Text("Malayalam", overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            DropdownMenuItem(value: "Tamil", child: Text("Tamil", overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            DropdownMenuItem(value: "Telugu", child: Text("Telugu", overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            DropdownMenuItem(value: "Kannada", child: Text("Kannada", overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            DropdownMenuItem(value: "Devanagari", child: Text("Devanagari", overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            DropdownMenuItem(value: "Bengali", child: Text("Bengali", overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            DropdownMenuItem(value: "Gujarati", child: Text("Gujarati", overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            DropdownMenuItem(value: "Odia", child: Text("Odia", overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            DropdownMenuItem(value: "Gurmukhi", child: Text("Gurmukhi", overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            DropdownMenuItem(value: "IAST", child: Text("Latin (IAST)", overflow: TextOverflow.ellipsis, maxLines: 1)),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              settingsController.setTransliterationTargetLanguage(val);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ) : const SizedBox.shrink(),
+                  ),
                 ],
               ),
               CustomExpansionTile(
