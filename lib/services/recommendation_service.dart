@@ -36,15 +36,11 @@ class RecommendationService {
   /// Call this when a new [MediaItem] starts playing.
   static Future<void> recordPlay(MediaItem song) async {
     final box = await _openBox();
-    try {
-      final stats = _getOrCreate(box, song);
-      stats.playCount++;
-      stats.lastPlayedAt = DateTime.now();
-      stats.score = _computeScore(stats);
-      await stats.save();
-    } finally {
-      await box.close();
-    }
+    final stats = _getOrCreate(box, song);
+    stats.playCount++;
+    stats.lastPlayedAt = DateTime.now();
+    stats.score = _computeScore(stats);
+    await stats.save();
   }
 
   /// Records a skip event.
@@ -59,34 +55,26 @@ class RecommendationService {
 
     final ratio = listenedFor.inSeconds / totalSecs;
     final box = await _openBox();
-    try {
-      final stats = _getOrCreate(box, song);
-      stats.listenedSeconds += listenedFor.inSeconds;
+    final stats = _getOrCreate(box, song);
+    stats.listenedSeconds += listenedFor.inSeconds;
 
-      // Only penalise skips that happen early in the song
-      if (ratio < 0.40) {
-        stats.skipCount++;
-      }
-
-      stats.score = _computeScore(stats);
-      await stats.save();
-    } finally {
-      await box.close();
+    // Only penalise skips that happen early in the song
+    if (ratio < 0.40) {
+      stats.skipCount++;
     }
+
+    stats.score = _computeScore(stats);
+    await stats.save();
   }
 
   /// Toggles the like status and recomputes the score.
   static Future<void> recordLike(String songId, {required bool liked}) async {
     final box = await _openBox();
-    try {
-      final stats = box.get(songId) as SongStats?;
-      if (stats == null) return; // song hasn't been played yet
-      stats.isLiked = liked;
-      stats.score = _computeScore(stats);
-      await stats.save();
-    } finally {
-      await box.close();
-    }
+    final stats = box.get(songId) as SongStats?;
+    if (stats == null) return; // song hasn't been played yet
+    stats.isLiked = liked;
+    stats.score = _computeScore(stats);
+    await stats.save();
   }
 
   /// Returns top-scored songs as [MediaItem] objects.
@@ -95,18 +83,14 @@ class RecommendationService {
   static Future<List<MediaItem>> getRecommendedSongs({int limit = 20}) async {
     try {
       final box = await _openBox();
-      try {
-        final allStats = box.values.cast<SongStats>().toList();
-        if (allStats.isEmpty) return [];
+      final allStats = box.values.cast<SongStats>().toList();
+      if (allStats.isEmpty) return [];
 
-        // Sort inline — HiveObjects can't cross isolate boundaries because
-        // they contain internal async Hive state (_Future, ReadWriteSync).
-        // O(n log n) sorting is fast enough for any realistic music library.
-        allStats.sort((a, b) => b.score.compareTo(a.score));
-        return allStats.take(limit).map(_toMediaItem).toList();
-      } finally {
-        await box.close();
-      }
+      // Sort inline — HiveObjects can't cross isolate boundaries because
+      // they contain internal async Hive state (_Future, ReadWriteSync).
+      // O(n log n) sorting is fast enough for any realistic music library.
+      allStats.sort((a, b) => b.score.compareTo(a.score));
+      return allStats.take(limit).map(_toMediaItem).toList();
     } catch (e) {
       printERROR('RecommendationService.getRecommendedSongs: $e');
       return [];
@@ -123,36 +107,32 @@ class RecommendationService {
       }) async {
     try {
       final box = await _openBox();
-      try {
-        final allStats = box.values.cast<SongStats>().toList();
-        if (allStats.isEmpty) return [];
+      final allStats = box.values.cast<SongStats>().toList();
+      if (allStats.isEmpty) return [];
 
-        final seedArtistIds =
-            (seed.extras?['artists'] as List? ?? [])
-                .map((a) => a['id']?.toString() ?? '')
-                .where((id) => id.isNotEmpty)
-                .toSet();
+      final seedArtistIds =
+          (seed.extras?['artists'] as List? ?? [])
+              .map((a) => a['id']?.toString() ?? '')
+              .where((id) => id.isNotEmpty)
+              .toSet();
 
-        final seedArtistName = seed.artist?.toLowerCase() ?? '';
+      final seedArtistName = seed.artist?.toLowerCase() ?? '';
 
-        final similar = allStats
-            .where((s) => s.songId != seed.id) // exclude the seed itself
-            .where((s) {
-          // Artist-ID match (precise)
-          if (seedArtistIds.isNotEmpty) {
-            return s.artistIds.any((id) => seedArtistIds.contains(id));
-          }
-          // Fallback: fuzzy artist name match
-          return s.artist.toLowerCase().contains(seedArtistName) ||
-              seedArtistName.contains(s.artist.toLowerCase());
-        })
-            .toList()
-          ..sort((a, b) => b.score.compareTo(a.score));
+      final similar = allStats
+          .where((s) => s.songId != seed.id) // exclude the seed itself
+          .where((s) {
+        // Artist-ID match (precise)
+        if (seedArtistIds.isNotEmpty) {
+          return s.artistIds.any((id) => seedArtistIds.contains(id));
+        }
+        // Fallback: fuzzy artist name match
+        return s.artist.toLowerCase().contains(seedArtistName) ||
+            seedArtistName.contains(s.artist.toLowerCase());
+      })
+          .toList()
+        ..sort((a, b) => b.score.compareTo(a.score));
 
-        return similar.take(limit).map(_toMediaItem).toList();
-      } finally {
-        await box.close();
-      }
+      return similar.take(limit).map(_toMediaItem).toList();
     } catch (e) {
       printERROR('RecommendationService.getSimilarSongs: $e');
       return [];
@@ -199,11 +179,7 @@ class RecommendationService {
   /// Used for cold-start detection.
   static Future<bool> hasEnoughHistory({int minSongs = 3}) async {
     final box = await _openBox();
-    try {
-      return box.length >= minSongs;
-    } finally {
-      await box.close();
-    }
+    return box.length >= minSongs;
   }
 
   // ── Internal helpers ─────────────────────────────────────────────────────

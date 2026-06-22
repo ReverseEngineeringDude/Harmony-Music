@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -146,15 +147,19 @@ class _AlbumArtNLyricsState extends State<AlbumArtNLyrics>
                       onTap: () {
                         playerController.showLyrics();
                       },
-                      child: Container(
-                        height: widget.playerArtImageSize,
-                        width: widget.playerArtImageSize,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Stack(
-                          children: [
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(5),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+                          child: Container(
+                            height: widget.playerArtImageSize,
+                            width: widget.playerArtImageSize,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.6), // Dark overlay for contrast
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Stack(
+                              children: [
                             LyricsWidget(
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 0,
@@ -182,7 +187,9 @@ class _AlbumArtNLyricsState extends State<AlbumArtNLyrics>
                                 ),
                               ),
                             )
-                          ],
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     )

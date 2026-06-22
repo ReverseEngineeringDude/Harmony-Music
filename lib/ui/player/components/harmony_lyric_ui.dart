@@ -14,30 +14,30 @@ class HarmonyLyricUI extends LyricUI {
 
   HarmonyLyricUI({
     this.highlightColor = Colors.white,
-    this.activeFontSize = 22,
-    this.inactiveFontSize = 15,
-    this.lineGap = 28,
+    this.activeFontSize = 25, // Premium monumental size
+    this.inactiveFontSize = 24, // Clean readable size
+    this.lineGap = 36, // Better spacing between lines
   });
 
   @override
   TextStyle getPlayingMainTextStyle() => TextStyle(
         color: Colors.white,
         fontSize: activeFontSize,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.3,
+        fontWeight: FontWeight.w800, // Monumental bold
+        letterSpacing: -0.5,
         shadows: [
           Shadow(
-            color: highlightColor.withValues(alpha: 0.6),
-            blurRadius: 12,
+            color: highlightColor.withValues(alpha: 0.3),
+            blurRadius: 20,
           ),
         ],
       );
 
   @override
   TextStyle getOtherMainTextStyle() => TextStyle(
-        color: Colors.white.withValues(alpha: 0.38),
+        color: Colors.white.withValues(alpha: 0.3), // Pushed back in hierarchy
         fontSize: inactiveFontSize,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w600, // Semi-bold for clarity
       );
 
   @override

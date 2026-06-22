@@ -13,8 +13,11 @@ class SyncedLyricsService {
     }
 
     final dio = Dio(BaseOptions(
-      connectTimeout: const Duration(seconds: 4),
-      receiveTimeout: const Duration(seconds: 4),
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      headers: {
+        'User-Agent': 'HarmonyMusic/1.0 (https://github.com/ReverseEngineeringDude/Harmony-Music)'
+      },
     ));
     final dur = song.duration?.inSeconds ?? durInSec;
 
@@ -31,6 +34,7 @@ class SyncedLyricsService {
         '&duration=$dur';
     try {
       final response = (await dio.get(exactUrl)).data;
+      print('exactUrl: $exactUrl');
       if (response is Map && response["syncedLyrics"] != null) {
         printINFO("Lyrics: exact synced match found");
         final lyricsData = {
@@ -38,13 +42,12 @@ class SyncedLyricsService {
           "plainLyrics": response["plainLyrics"] ?? ""
         };
         await lyricsBox.put(song.id, lyricsData);
-        await lyricsBox.close();
         return lyricsData;
       }
     } on DioException catch (e) {
       // 404 TrackNotFound is expected — fuzzy search will handle it
       if (e.response?.statusCode != 404) {
-        printERROR("Lyrics exact lookup error: ${e.response}");
+        printERROR("Lyrics exact lookup error: ${e.response ?? e.message}");
       }
     }
 
@@ -54,26 +57,32 @@ class SyncedLyricsService {
         '&artist_name=${Uri.encodeQueryComponent(actualArtist)}';
     try {
       final results = (await dio.get(searchUrl)).data;
+      print('searchUrl: $searchUrl');
       if (results is List && results.isNotEmpty) {
         // Prefer a result with synced lyrics whose duration is close (±10 s)
         Map<String, dynamic>? bestSynced;
         Map<String, dynamic>? bestPlain;
+        Map<String, dynamic>? fallbackSynced;
+        Map<String, dynamic>? fallbackPlain;
 
         for (final item in results) {
           if (item is! Map) continue;
           final itemDur = (item['duration'] as num?)?.toInt() ?? 0;
-          final durOk = (itemDur - dur).abs() <= 10;
+          // allow 15 seconds tolerance for "best" match
+          final durOk = dur == 0 || (itemDur - dur).abs() <= 15;
 
-          if (item['syncedLyrics'] != null && durOk && bestSynced == null) {
-            bestSynced = Map<String, dynamic>.from(item);
+          if (item['syncedLyrics'] != null) {
+            fallbackSynced ??= Map<String, dynamic>.from(item);
+            if (durOk && bestSynced == null) bestSynced = Map<String, dynamic>.from(item);
           }
-          if (item['plainLyrics'] != null && durOk && bestPlain == null) {
-            bestPlain = Map<String, dynamic>.from(item);
+          if (item['plainLyrics'] != null) {
+            fallbackPlain ??= Map<String, dynamic>.from(item);
+            if (durOk && bestPlain == null) bestPlain = Map<String, dynamic>.from(item);
           }
           if (bestSynced != null) break;
         }
 
-        final best = bestSynced ?? bestPlain;
+        final best = bestSynced ?? fallbackSynced ?? bestPlain ?? fallbackPlain;
         if (best != null) {
           printINFO("Lyrics: fuzzy search match found (synced=${best['syncedLyrics'] != null})");
           final lyricsData = {
@@ -81,15 +90,13 @@ class SyncedLyricsService {
             "plainLyrics": best["plainLyrics"] ?? ""
           };
           await lyricsBox.put(song.id, lyricsData);
-          await lyricsBox.close();
           return lyricsData;
         }
       }
     } on DioException catch (e) {
-      printERROR("Lyrics search error: ${e.response}");
+      printERROR("Lyrics search error: ${e.response ?? e.message}");
     }
 
-    await lyricsBox.close();
     return null; // caller will fall back to YouTube Music plain-text lyrics
   }
 }
