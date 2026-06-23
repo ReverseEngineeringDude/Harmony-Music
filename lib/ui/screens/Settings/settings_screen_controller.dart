@@ -49,7 +49,7 @@ class SettingsScreenController extends GetxController {
   final restorePlaybackSession = false.obs;
   final cacheHomeScreenData = true.obs;
   final ultraHighQualityEnabled = false.obs;
-  final isTransliterationEnabled = true.obs;
+  final isTransliterationEnabled = false.obs;
   final transliterationTargetLanguage = "Malayalam".obs;
   final currentVersion = "V1.12.2";
 
@@ -135,7 +135,7 @@ class SettingsScreenController extends GetxController {
         setBox.get("autoDownloadFavoriteSongEnabled") ?? false;
     ultraHighQualityEnabled.value = setBox.get("ultraHighQualityEnabled") ?? false;
     transliterationTargetLanguage.value = setBox.get("transliterationTargetLanguage") ?? "Malayalam";
-    isTransliterationEnabled.value = setBox.get("isTransliterationEnabled") ?? true;
+    isTransliterationEnabled.value = setBox.get("isTransliterationEnabled") ?? false;
   }
 
   void toggleTransliterationFeature(bool val) {

@@ -32,8 +32,7 @@ class PlayerControlWidget extends StatelessWidget {
                         Colors.white,
                         Colors.white,
                         Colors.white,
-                        Colors.white,
-                        Colors.transparent
+                        Colors.transparent,
                       ],
                     ).createShader(
                         Rect.fromLTWH(0, 0, rect.width, rect.height));

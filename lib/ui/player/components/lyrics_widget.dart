@@ -23,26 +23,32 @@ class LyricsWidget extends StatelessWidget {
 
 
       return Stack(
+        fit: StackFit.expand,
         children: [
           // Main lyrics content
           pc.lyricsMode.toInt() == 1
-              ? Center(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: padding,
-                    child: TextSelectionTheme(
-                      data: Theme.of(context).textSelectionTheme,
-                      child: SelectableText(
-                        pc.lyrics['plainLyrics'] == 'NA'
-                            ? 'lyricsNotAvailable'.tr
-                            : pc.lyrics['plainLyrics'],
-                        textAlign: TextAlign.center,
-                        style: pc.isDesktopLyricsDialogOpen
-                            ? Theme.of(context).textTheme.titleMedium!
-                            : Theme.of(context)
-                                .textTheme
-                                .titleMedium!
-                                .copyWith(color: Colors.white),
+              ? GestureDetector(
+                  onTap: () => pc.showLyricsflag.value = false,
+                  behavior: HitTestBehavior.translucent,
+                  child: Center(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: padding.add(const EdgeInsets.only(bottom: 70)),
+                      child: TextSelectionTheme(
+                        data: Theme.of(context).textSelectionTheme,
+                        child: SelectableText(
+                          pc.lyrics['plainLyrics'] == 'NA'
+                              ? 'lyricsNotAvailable'.tr
+                              : pc.lyrics['plainLyrics'],
+                          textAlign: TextAlign.center,
+                          onTap: () => pc.showLyricsflag.value = false,
+                          style: pc.isDesktopLyricsDialogOpen
+                              ? Theme.of(context).textTheme.titleMedium!
+                              : Theme.of(context)
+                                  .textTheme
+                                  .titleMedium!
+                                  .copyWith(color: Colors.white),
+                        ),
                       ),
                     ),
                   ),
@@ -53,8 +59,9 @@ class LyricsWidget extends StatelessWidget {
                   final hasSynced =
                       (pc.lyrics['synced'] ?? '').toString().trim().isNotEmpty;
                   final reader = SmoothLyricsReader(
-                    padding: const EdgeInsets.only(left: 5, right: 5),
+                    padding: const EdgeInsets.only(left: 5, right: 5, bottom: 70),
                     lyricUi: pc.lyricUi,
+                    onTap: () => pc.showLyricsflag.value = false,
                     position:
                         pc.progressBarStatus.value.current.inMilliseconds + pc.lyricsOffset.value,
                     model: LyricsModelBuilder.create()
@@ -62,7 +69,35 @@ class LyricsWidget extends StatelessWidget {
                         .getModel(),
                     emptyBuilder: () => _SyncedEmptyWidget(pc: pc),
                   );
-                  return IgnorePointer(ignoring: hasSynced, child: reader);
+                  
+                  // Scroll Reveal Shader: Hides previous lines, keeps current & next clear, fades the rest deeply.
+                  final revealMask = ShaderMask(
+                    shaderCallback: (rect) {
+                      return const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent, // 0.0: Top edge invisible
+                          Colors.black26,     // 0.15: Start smooth fade in
+                          Colors.black87,     // 0.35: Almost fully visible
+                          Colors.black,       // 0.48: Peak visibility (current line)
+                          Colors.black,       // 0.52: Peak visibility (current line)
+                          Colors.black87,     // 0.65: Start smooth fade out
+                          Colors.black26,     // 0.85: Ghostly fade out
+                          Colors.transparent, // 1.0: Bottom edge invisible
+                        ],
+                        stops: [0.0, 0.15, 0.35, 0.48, 0.52, 0.65, 0.85, 1.0],
+                      ).createShader(rect);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: reader,
+                  );
+
+                  return GestureDetector(
+                    onTap: () => pc.showLyricsflag.value = false,
+                    behavior: HitTestBehavior.translucent,
+                    child: IgnorePointer(ignoring: hasSynced, child: revealMask),
+                  );
                 })(),
 
           if (pc.lyricsMode.toInt() == 0 && (pc.lyrics['synced'] ?? '').toString().trim().isNotEmpty)
@@ -124,7 +159,7 @@ class _SyncedEmptyWidget extends StatelessWidget {
     final bool isDesktop = pc.isDesktopLyricsDialogOpen;
     final bgColor = isDesktop
         ? Theme.of(context).colorScheme.surfaceContainerHigh
-        : Colors.black.withValues(alpha: 0.55);
+        : Colors.white.withValues(alpha: 0.1);
     final fgColor = isDesktop
         ? Theme.of(context).colorScheme.onSurface
         : Colors.white;
@@ -133,14 +168,9 @@ class _SyncedEmptyWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 6,
-              offset: const Offset(0, 2))
-        ],
+        border: Border.all(color: Colors.white24, width: 1),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -183,7 +213,7 @@ class _TransliterateButton extends StatelessWidget {
     final bool isDesktop = pc.isDesktopLyricsDialogOpen;
     final bgColor = isDesktop
         ? Theme.of(context).colorScheme.surfaceContainerHigh
-        : Colors.black.withValues(alpha: 0.55);
+        : Colors.white.withValues(alpha: 0.1);
     final fgColor = isDesktop
         ? Theme.of(context).colorScheme.onSurface
         : Colors.white;
@@ -202,14 +232,9 @@ class _TransliterateButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: isTransliterated ? Colors.teal : bgColor,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2))
-            ],
+            border: Border.all(color: Colors.white24, width: 1),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

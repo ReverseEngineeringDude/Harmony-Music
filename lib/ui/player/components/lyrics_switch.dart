@@ -13,24 +13,39 @@ class LyricsSwitch extends StatelessWidget {
     final PlayerController playerController = Get.find<PlayerController>();
     return Obx(
       () => playerController.showLyricsflag.value
-          ? Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: ToggleSwitch(
-                minWidth: 90.0,
-                cornerRadius: 20.0,
-                activeBgColors: [
-                  [Theme.of(context).primaryColor.withLightness(0.4)],
-                  [Theme.of(context).primaryColor.withLightness(0.4)]
-                ],
-                activeFgColor: Colors.white,
-                inactiveBgColor: Theme.of(context).colorScheme.secondary,
-                inactiveFgColor: Colors.white,
-                initialLabelIndex: playerController.lyricsMode.value,
-                totalSwitches: 2,
-                labels: ['synced'.tr, 'plain'.tr],
-                radiusStyle: true,
-                onToggle: playerController.changeLyricsMode,
-              ),
+          ? LayoutBuilder(
+              builder: (context, constraints) {
+                // Determine the available width for each pill (subtracting a small margin for borders/dividers)
+                double availableWidth = constraints.maxWidth;
+                double pillWidth = (availableWidth / 2) - 2.0;
+                
+                // Safety clamp to prevent negative widths on extremely small screens
+                if (pillWidth < 0) pillWidth = 10.0;
+                
+                return ToggleSwitch(
+                  minWidth: pillWidth,
+                  cornerRadius: 20.0,
+                  activeBgColors: [
+                    [Colors.white.withValues(alpha: 0.25)],
+                    [Colors.white.withValues(alpha: 0.25)]
+                  ],
+                  activeFgColor: Colors.white,
+                  inactiveBgColor: Colors.transparent, // Removed the background container box
+                  dividerColor: Colors.transparent, // Removed the divider line
+                  inactiveFgColor: Colors.white70,
+                  initialLabelIndex: playerController.lyricsMode.value,
+                  totalSwitches: 2,
+                  labels: ['synced'.tr, 'plain'.tr],
+                  radiusStyle: true,
+                  onToggle: (index) {
+                    if (index != null && index == playerController.lyricsMode.value) {
+                      playerController.showLyricsflag.value = false;
+                    } else {
+                      playerController.changeLyricsMode(index);
+                    }
+                  },
+                );
+              }
             )
           : const SizedBox.shrink(),
     );

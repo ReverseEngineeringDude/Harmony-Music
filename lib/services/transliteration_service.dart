@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 
 class TransliterationService {
   static final Dio _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 5),
-    receiveTimeout: const Duration(seconds: 5),
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
   ));
 
   static final Map<String, RegExp> _scriptRanges = {

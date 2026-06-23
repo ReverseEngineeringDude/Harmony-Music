@@ -35,31 +35,31 @@ class HarmonyLyricUI extends LyricUI {
 
   @override
   TextStyle getOtherMainTextStyle() => TextStyle(
-        color: Colors.white.withValues(alpha: 0.3), // Pushed back in hierarchy
+        color: Colors.white.withValues(alpha: 0.4), // Higher base alpha, ShaderMask handles the physical scroll fade
         fontSize: inactiveFontSize,
-        fontWeight: FontWeight.w600, // Semi-bold for clarity
+        fontWeight: FontWeight.w600, // Thicker so it doesn't vanish too early
       );
 
   @override
   TextStyle getPlayingExtTextStyle() => TextStyle(
-        color: Colors.white.withValues(alpha: 0.7),
+        color: Colors.white.withValues(alpha: 0.5),
         fontSize: inactiveFontSize,
       );
 
   @override
   TextStyle getOtherExtTextStyle() => TextStyle(
-        color: Colors.white.withValues(alpha: 0.28),
+        color: Colors.white.withValues(alpha: 0.1),
         fontSize: inactiveFontSize - 2,
       );
 
   @override
-  double getLineSpace() => lineGap;
+  double getLineSpace() => lineGap + 10; // Extra spacing for dramatic reveal
 
   @override
   double getInlineSpace() => 20;
 
   @override
-  double getPlayingLineBias() => 0.3;
+  double getPlayingLineBias() => 0.5; // Centered playing line
 
   @override
   LyricAlign getLyricHorizontalAlign() => LyricAlign.CENTER;

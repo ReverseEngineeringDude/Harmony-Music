@@ -9,6 +9,7 @@ import '../player_controller.dart';
 import 'albumart_lyrics.dart';
 import 'backgroud_image.dart';
 import 'lyrics_switch.dart';
+import 'lyrics_widget.dart';
 import 'player_control.dart';
 
 /// Standard player widget
@@ -44,18 +45,25 @@ class StandardPlayer extends StatelessWidget {
 
         /// Stack child
         /// Blur effect on background
-        BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-          child: Stack(
-            children: [
-              /// opacity effect on background
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.8),
+        Obx(() {
+          final isLyrics = playerController.showLyricsflag.isTrue;
+          return BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: isLyrics ? 5.0 : 5.0, 
+              sigmaY: isLyrics ? 5.0 : 5.0
+            ),
+            child: Stack(
+              children: [
+                /// opacity effect on background
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isLyrics
+                          ? Colors.black.withValues(alpha: 0.6)
+                          : Theme.of(context).primaryColor.withValues(alpha: 0.8),
+                    ),
                   ),
                 ),
-              ),
 
               /// used to hide queue header when player is minimized
               /// gradient to used here
@@ -80,7 +88,8 @@ class StandardPlayer extends StatelessWidget {
               ),
             ],
           ),
-        ),
+        );
+        }),
 
         /// Stack child
         /// Player content in landscape mode
@@ -123,36 +132,40 @@ class StandardPlayer extends StatelessWidget {
               :
 
               /// Player content in portrait mode
-              Column(
+              Obx(() => Column(
                   children: [
                     /// Work as top padding depending on the lyrics visibility and screen size
-                    Obx(
-                      () => playerController.showLyricsflag.value
-                          ? SizedBox(
-                              height: size.height < 750 ? 60 : 90,
-                            )
-                          : SizedBox(
-                              height: size.height < 750 ? 110 : 140,
-                            ),
+                    SizedBox(
+                      height: playerController.showLyricsflag.value
+                          ? (size.height < 750 ? 80 : 110)
+                          : (size.height < 750 ? 110 : 140),
                     ),
 
-                    /// Push the image down to close the gap with controls
-                    const Spacer(),
+                    /// Push the image down to close the gap with controls (only when lyrics are hidden)
+                    if (!playerController.showLyricsflag.value) const Spacer(),
 
                     /// Contains the lyrics switch and album art with lyrics
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const LyricsSwitch(),
-                        ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 500),
-                            child: AlbumArtNLyrics(
-                                playerArtImageSize: playerArtImageSize)),
-                      ],
-                    ),
+                    if (playerController.showLyricsflag.value)
+                      Expanded(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.translucent,
+                          onTap: () => playerController.showLyricsflag.value = false,
+                          child: LyricsWidget(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                          ),
+                        ),
+                      )
+                    else
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AlbumArtNLyrics(
+                              playerArtImageSize: playerArtImageSize),
+                        ],
+                      ),
 
                     /// Fixed gap instead of Expanded
-                    const SizedBox(height: 40),
+                    if (!playerController.showLyricsflag.value) const SizedBox(height: 40),
 
                     /// Contains the player controls
                     Padding(
@@ -163,7 +176,7 @@ class StandardPlayer extends StatelessWidget {
                           child: const PlayerControlWidget()),
                     )
                   ],
-                ),
+                )),
         ),
 
         /// Stack child
@@ -186,26 +199,25 @@ class StandardPlayer extends StatelessWidget {
                   onPressed: playerController.playerPanelController.close,
                 ),
 
-                /// Playing from [Album name]
+                /// Playing from [Album name] OR Lyrics Switch
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 8.0, left: 5, right: 5),
                     child: Obx(
-                      () => Column(
-                        children: [
-                          Text(playerController.playinfrom.value.typeString,
-                              style: const TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.bold)),
-                          Obx(
-                            () => Text(
-                              "\"${playerController.playinfrom.value.nameString}\"",
-                              overflow: TextOverflow.ellipsis,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          )
-                        ],
-                      ),
+                      () => playerController.showLyricsflag.isTrue 
+                        ? const LyricsSwitch()
+                        : Column(
+                            children: [
+                              Text(playerController.playinfrom.value.typeString,
+                                  style: const TextStyle(
+                                      fontSize: 12, fontWeight: FontWeight.bold)),
+                              Text(
+                                "\"${playerController.playinfrom.value.nameString}\"",
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              )
+                            ],
+                          ),
                     ),
                   ),
                 ),
